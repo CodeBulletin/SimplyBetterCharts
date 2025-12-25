@@ -2,12 +2,6 @@
 import type { Picker } from "../Types/types";
 
 export interface ChartLayer<T> {
-  readonly id: string;
-  readonly data: readonly T[];
-
-  init(container: SVGSVGElement): void;
-  draw(): void;
-
+  setPicker(picker: Picker<T>): void;
   getPicker(): Picker<T> | null;
-  onHover(index: number | null): void;
 }

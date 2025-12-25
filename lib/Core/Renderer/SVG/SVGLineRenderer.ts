@@ -27,6 +27,11 @@ export class SVGLineRenderer implements LineRenderer {
     svg.appendChild(this.hoverCircle);
   }
 
+  destroy(): void {
+    this.path?.remove();
+    this.hoverCircle?.remove();
+  }
+
   draw(data: Point[], hovered: number | null) {
     if (!this.path || data.length === 0) return;
 

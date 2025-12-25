@@ -12,6 +12,10 @@ export class SVGBarRenderer implements BarRenderer {
     svg.appendChild(this.group);
   }
 
+  destroy() {
+    this.group?.remove();
+  }
+
   draw(data: Rect[], hovered: number | null) {
     if (!this.group) return;
     while (this.rects.length < data.length) {

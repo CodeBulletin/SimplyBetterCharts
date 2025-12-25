@@ -1,5 +1,10 @@
-import { LineChart } from "../lib/React/LineChart";
-import { BarChart } from "../lib/React/BarChart";
+import {
+  LineChart,
+  BarChart,
+  StackedChart,
+  BarGraph,
+  LineGraph,
+} from "../lib/main";
 
 const PointData = [
   { x: 0, y: 10 },
@@ -20,6 +25,11 @@ export default function App() {
     <>
       <LineChart data={PointData} width={400} height={300} />
       <BarChart data={BarData} width={400} height={300} />
+      <StackedChart
+        graphs={[BarGraph(BarData), LineGraph(PointData)]}
+        width={400}
+        height={300}
+      ></StackedChart>
     </>
   );
 }

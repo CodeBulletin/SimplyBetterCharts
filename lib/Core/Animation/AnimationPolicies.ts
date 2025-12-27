@@ -5,7 +5,7 @@ import type { AnimationContext } from "./AnimationContext";
 import type { Rect } from "../Types/types";
 
 export class LineBaselinePolicy implements AnimationPolicy<Point> {
-  readonly duration = 0.4;
+  duration = 0.4;
 
   ease(t: number) {
     return easeOutCubic(t);
@@ -14,18 +14,15 @@ export class LineBaselinePolicy implements AnimationPolicy<Point> {
   start(next: Point[], ctx: AnimationContext): Point[] {
     return next.map((p) => ({
       x: p.x,
-      y: ctx.height,
+      y: ctx.height, // baseline
     }));
   }
 
   interpolate(from: Point[], to: Point[], t: number): Point[] {
-    return to.map((p, i) => {
-      const q = from[i] ?? p;
-      return {
-        x: lerp(q.x, p.x, t),
-        y: lerp(q.y, p.y, t),
-      };
-    });
+    return to.map((p, i) => ({
+      x: lerp(from[i].x, p.x, t),
+      y: lerp(from[i].y, p.y, t),
+    }));
   }
 }
 
@@ -37,11 +34,11 @@ export class LineUpdatePolicy implements AnimationPolicy<Point> {
   }
 
   start(next: Point[], ctx: AnimationContext): Point[] {
-    return ctx.isFirstRender ? next : [];
+    // Start from previous rendered data
+    return ctx.previous ?? next;
   }
 
   interpolate(from: Point[], to: Point[], t: number): Point[] {
-    if (!from.length) return to;
     return to.map((p, i) => {
       const q = from[i] ?? p;
       return {

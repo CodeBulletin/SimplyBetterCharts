@@ -2,9 +2,13 @@ import { useLayoutEffect, useRef } from "react";
 import { ChartEngine } from "../Core/Engine/ChartEngine";
 import { ChartRoot } from "../Core/ChartRoot";
 import { LineLayer } from "../Core/Layer/LineLayer";
-import { createLineRenderer } from "./Factories/Factories";
+import { createAxisRenderer, createLineRenderer } from "./Factories/Factories";
 import type { LineData } from "../Core/Types/types";
-import { LineBaselinePolicy } from "../Core/Animation/AnimationPolicies";
+import {
+  LineBaselinePolicy,
+  LineUpdatePolicy,
+} from "../Core/Animation/AnimationPolicies";
+import { AxisLayer } from "../Core/Layer/AxisLayer";
 
 type Props = {
   data: LineData[];
@@ -25,13 +29,15 @@ export function LineChart({ data, width, height, renderer = "svg" }: Props) {
     const engine = new ChartEngine(svgRef.current, width, height);
     const root = new ChartRoot(engine);
 
-    const layer = new LineLayer(
-      createLineRenderer(renderer),
-      new LineBaselinePolicy(),
-    );
+    const layer = new LineLayer(createLineRenderer(renderer), {
+      initial: new LineBaselinePolicy(),
+      update: new LineUpdatePolicy(),
+    });
 
     layer.setData(data);
 
+    engine.addLayer(new AxisLayer("bottom", createAxisRenderer(renderer)));
+    engine.addLayer(new AxisLayer("left", createAxisRenderer(renderer)));
     engine.addLayer(layer);
 
     root.start();

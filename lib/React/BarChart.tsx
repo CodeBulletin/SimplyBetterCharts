@@ -2,9 +2,13 @@ import { useLayoutEffect, useRef } from "react";
 import { ChartEngine } from "../Core/Engine/ChartEngine";
 import { ChartRoot } from "../Core/ChartRoot";
 import { BarLayer } from "../Core/Layer/BarLayer";
-import { createBarRenderer } from "./Factories/Factories";
+import { createAxisRenderer, createBarRenderer } from "./Factories/Factories";
 import type { BarData } from "../Core/Types/types";
-import { BarGrowPolicy } from "../Core/Animation/AnimationPolicies";
+import {
+  BarGrowPolicy,
+  NoAnimationPolicy,
+} from "../Core/Animation/AnimationPolicies";
+import { AxisLayer } from "../Core/Layer/AxisLayer";
 
 type Props = {
   data: BarData[];
@@ -24,10 +28,15 @@ export function BarChart({ data, width, height }: Props) {
     const engine = new ChartEngine(svgRef.current, width, height);
     const root = new ChartRoot(engine);
 
-    const layer = new BarLayer(createBarRenderer("svg"), new BarGrowPolicy());
+    const layer = new BarLayer(createBarRenderer("svg"), {
+      initial: new BarGrowPolicy(),
+      update: new NoAnimationPolicy(),
+    });
 
     layer.setData(data);
 
+    engine.addLayer(new AxisLayer("bottom", createAxisRenderer("svg")));
+    engine.addLayer(new AxisLayer("left", createAxisRenderer("svg")));
     engine.addLayer(layer);
 
     root.start();

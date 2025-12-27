@@ -2,6 +2,8 @@ import { useLayoutEffect, useRef } from "react";
 import { ChartEngine } from "../Core/Engine/ChartEngine";
 import { ChartRoot } from "../Core/ChartRoot";
 import type { GraphFactory } from "./types";
+import { AxisLayer } from "../Core/Layer/AxisLayer";
+import { createAxisRenderer } from "./Factories/Factories";
 
 type Props = {
   width: number;
@@ -18,6 +20,9 @@ export function StackedChart({ width, height, graphs }: Props) {
 
     const engine = new ChartEngine(svgRef.current, width, height);
     const root = new ChartRoot(engine);
+
+    engine.addLayer(new AxisLayer("bottom", createAxisRenderer("svg")));
+    engine.addLayer(new AxisLayer("left", createAxisRenderer("svg")));
 
     for (const createGraph of graphs) {
       const graph = createGraph(engine.scales);

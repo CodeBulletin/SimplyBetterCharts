@@ -19,6 +19,8 @@ export type LineData = {
   y: number;
 };
 
+type AnimationStage = "initial" | "update";
+
 export type ScaleId =
   | "x"
   | "y"
@@ -26,4 +28,8 @@ export type ScaleId =
   | "y:secondary"
   | `color:${string}`;
 
-export type Domain = Partial<Record<ScaleId, any>>;
+export type ContinuousDomain = [number, number];
+export type CategoricalDomain = (string | number)[];
+export type DomainValue = ContinuousDomain | CategoricalDomain;
+
+export type Domain = Partial<Record<ScaleId, DomainValue>>;

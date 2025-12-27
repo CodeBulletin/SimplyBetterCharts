@@ -1,6 +1,6 @@
 import type { Scale } from "./Scale";
 
-export class BandScale<T = string | number> implements Scale<T[]> {
+export class BandScale<T = string | number> implements Scale<T[], T> {
   private domain: T[] = [];
   private index = new Map<T, number>();
 
@@ -33,9 +33,9 @@ export class BandScale<T = string | number> implements Scale<T[]> {
     const n = this.domain.length;
     if (n === 0) return 0;
 
-    const totalPadding = this.paddingOuter * 2 + this.paddingInner * (n - 1);
+    const total = n + this.paddingInner * (n - 1) + this.paddingOuter * 2;
 
-    return (this.r1 - this.r0) / (n + totalPadding);
+    return (this.r1 - this.r0) / total;
   }
 
   get bandwidth(): number {
@@ -47,7 +47,10 @@ export class BandScale<T = string | number> implements Scale<T[]> {
     if (i === undefined) return NaN;
 
     return (
-      this.r0 + this.step * this.paddingOuter + i * this.step + this.step / 2
+      this.r0 +
+      this.step * this.paddingOuter +
+      i * this.step * (1 + this.paddingInner) +
+      this.step / 2
     );
   }
 

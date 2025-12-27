@@ -50,6 +50,7 @@ export class ChartRoot {
 
   reflow() {
     this.engine.reflow();
+    this.invalidate();
   }
 
   invalidate() {

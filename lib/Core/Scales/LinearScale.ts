@@ -1,6 +1,6 @@
 import type { Scale } from "./Scale";
 
-export class LinearScale implements Scale<[number, number]> {
+export class LinearScale implements Scale<[number, number], number> {
   private d0 = 0;
   private d1 = 1;
   private r0 = 0;

@@ -2,18 +2,18 @@ import type { ScaleId } from "../Types/types";
 import type { Scale } from "./Scale";
 
 export class ScaleRegistry {
-  private scales = new Map<ScaleId, Scale>();
+  private scales = new Map<unknown, unknown>();
 
-  set(id: ScaleId, scale: Scale) {
+  set<D, I>(id: ScaleId, scale: Scale<D, I>) {
     this.scales.set(id, scale);
   }
 
-  get<T extends Scale>(id: ScaleId): T {
+  get<D, I>(id: ScaleId): Scale<D, I> {
     const scale = this.scales.get(id);
     if (!scale) {
       throw new Error(`Scale "${id}" not registered`);
     }
-    return scale as T;
+    return scale as Scale<D, I>;
   }
 
   has(id: ScaleId) {

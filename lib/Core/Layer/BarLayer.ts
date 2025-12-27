@@ -1,5 +1,11 @@
 import type { AnyChartLayer } from "./Interface/AnyChartLayer";
-import type { Rect, BarData, Picker, Domain } from "../Types/types";
+import type {
+  Rect,
+  BarData,
+  Picker,
+  Domain,
+  AnimationStage,
+} from "../Types/types";
 import { processBarData } from "../DataProcessor/Processor";
 import { barPicker } from "../Picker/Picker";
 import type { BarRenderer } from "../Renderer/Interface/Renderers";
@@ -21,13 +27,17 @@ export class BarLayer implements AnyChartLayer, ChartLayer<Rect>, ScaledLayer {
   private readonly renderer: BarRenderer;
 
   private first: boolean;
-  private readonly policy: AnimationPolicy<Rect>;
+  private readonly policies: Record<AnimationStage, AnimationPolicy<Rect>>;
+  private currentPolicy!: AnimationPolicy<Rect>;
   private readonly anim = new AnimationController();
   private scales!: ScaleManager;
 
-  constructor(renderer: BarRenderer, policy: AnimationPolicy<Rect>) {
+  constructor(
+    renderer: BarRenderer,
+    policies: Record<AnimationStage, AnimationPolicy<Rect>>,
+  ) {
     this.renderer = renderer;
-    this.policy = policy;
+    this.policies = policies;
     this.first = true;
   }
 
@@ -45,15 +55,20 @@ export class BarLayer implements AnyChartLayer, ChartLayer<Rect>, ScaledLayer {
 
     const zeroY = this.scales.get("y").map(0);
 
-    this.from = this.policy.start(next, {
+    const stage = this.first ? "initial" : "update";
+    const policy = this.policies[stage];
+
+    this.from = policy.start(next, {
       width: this.scales.width,
       height: zeroY,
       isFirstRender: this.first,
+      previous: this.data,
     });
+
+    this.currentPolicy = policy;
 
     this.data = next;
     this.anim.start();
-    this.first = false;
   }
 
   setPicker(picker: Picker<Rect>): void {
@@ -62,10 +77,14 @@ export class BarLayer implements AnyChartLayer, ChartLayer<Rect>, ScaledLayer {
 
   draw(dt: number): boolean {
     if (this.anim.active) {
-      const rawT = this.anim.update(dt, this.policy.duration);
-      const t = this.policy.ease(rawT);
+      const rawT = this.anim.update(dt, this.currentPolicy.duration);
+      const t = this.currentPolicy.ease(rawT);
 
-      const frame = this.policy.interpolate(this.from, this.data, t);
+      const frame = this.currentPolicy.interpolate(this.from, this.data, t);
+
+      if (this.first && rawT > 0) {
+        this.first = false;
+      }
 
       this.renderer.draw(frame, this.hovered);
       return true;
@@ -101,9 +120,11 @@ export class BarLayer implements AnyChartLayer, ChartLayer<Rect>, ScaledLayer {
   }
 
   computeDomain(): Domain {
+    const ys = this.rawData.map((d) => d.value);
+
     return {
       x: this.rawData.map((d) => d.label),
-      y: [0, Math.max(...this.rawData.map((d) => d.value))],
+      y: [Math.min(0, ...ys), Math.max(0, ...ys)],
     };
   }
 }

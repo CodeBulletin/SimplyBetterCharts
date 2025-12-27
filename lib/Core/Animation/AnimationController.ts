@@ -15,7 +15,10 @@ export class AnimationController {
       return 1;
     }
 
-    this.t += dt / duration;
+    // 🔑 ensure progress even if dt is tiny
+    const delta = Math.max(dt, 1 / 60);
+
+    this.t += delta / duration;
 
     if (this.t >= 1) {
       this.t = 1;

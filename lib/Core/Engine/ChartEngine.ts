@@ -1,15 +1,25 @@
 import type { AnyChartLayer } from "../Layer/Interface/AnyChartLayer";
 import type { ScaledLayer } from "../Layer/Interface/ScaledLayer";
 import { ScaleManager } from "../Scales/ScaleManager";
+import type { ContinuousDomain, DomainValue, ScaleId } from "../Types/types";
+
+const DEFAULT_MARGIN = {
+  top: 20,
+  right: 20,
+  bottom: 30,
+  left: 40,
+};
 
 export class ChartEngine {
   private layers: (AnyChartLayer & Partial<ScaledLayer>)[] = [];
   private dirty = true; // 🔑 start dirty
   private readonly container: SVGSVGElement;
-  readonly scales = new ScaleManager();
+  readonly margin = DEFAULT_MARGIN;
+  readonly scales: ScaleManager;
 
   constructor(container: SVGSVGElement, width: number, height: number) {
     this.container = container;
+    this.scales = new ScaleManager(this.margin);
     this.scales.setSize(width, height);
   }
 
@@ -87,7 +97,7 @@ export class ChartEngine {
     this.markDirty();
   }
 
-  private ensureScaleTypes(collected: Map<string, any[]>) {
+  private ensureScaleTypes(collected: Map<ScaleId, DomainValue[]>) {
     for (const [id, values] of collected) {
       const sample = values[0];
 
@@ -123,7 +133,7 @@ export class ChartEngine {
     }
   }
 
-  private applyDomains(collected: Map<string, any[]>) {
+  private applyDomains(collected: Map<ScaleId, DomainValue[]>) {
     for (const [id, values] of collected) {
       const scale = this.scales.get(id as any);
 
@@ -132,22 +142,39 @@ export class ChartEngine {
       const isContinuous =
         Array.isArray(sample) &&
         sample.length === 2 &&
-        typeof sample[0] === "number";
+        typeof sample[0] === "number" &&
+        typeof sample[1] === "number";
 
       if (isContinuous) {
-        // continuous
-        const mins = values.map((v) => v[0]);
-        const maxs = values.map((v) => v[1]);
+        // ✅ Continuous scale: stretch domain
+        const mins = values.map((v) => (v as [number, number])[0]);
+        const maxs = values.map((v) => (v as [number, number])[1]);
+
         scale.setDomain([Math.min(...mins), Math.max(...maxs)]);
       } else {
-        // categorical
-        scale.setDomain([...new Set(values.flat())]);
+        // ✅ CATEGORICAL SCALE (THE FIX)
+        // Flatten → dedupe → RESET domain
+        const categories = Array.from(
+          new Set(values.flat() as (string | number)[]),
+        );
+
+        scale.setDomain(categories);
+
+        if (id === "x" && "domainValues" in scale) {
+          console.log(
+            "[Band scale debug]",
+            "Bands:",
+            scale.domainValues.length,
+            "Categories:",
+            scale.domainValues,
+          );
+        }
       }
     }
   }
 
   private resolveDomains() {
-    const collected = new Map<string, any[]>();
+    const collected = new Map<ScaleId, DomainValue[]>();
 
     // 1️⃣ collect all domains
     for (const layer of this.layers) {
@@ -155,9 +182,9 @@ export class ChartEngine {
       if (!domain) continue;
 
       for (const [id, value] of Object.entries(domain)) {
-        const arr = collected.get(id) ?? [];
-        arr.push(value);
-        collected.set(id, arr);
+        const arr = collected.get(id as ScaleId) ?? [];
+        arr.push(value as DomainValue);
+        collected.set(id as ScaleId, arr);
       }
     }
 

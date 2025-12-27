@@ -22,18 +22,22 @@ export function processBarData(data: BarData[], scales: ScaleManager): Rect[] {
     throw new Error("Bar chart requires a band scale on x axis");
   }
 
-  const w = x.bandwidth;
+  const w = x.bandwidth as number;
 
   return data.map((d) => {
     const cx = x.map(d.label);
-    const top = y.map(d.value);
-    const bottom = y.map(0);
+
+    const v0 = Math.min(0, d.value);
+    const v1 = Math.max(0, d.value);
+
+    const y0 = y.map(v1); // top of bar
+    const y1 = y.map(v0); // bottom of bar
 
     return {
       x: cx - w / 2,
-      y: top,
+      y: y0,
       w,
-      h: bottom - top,
+      h: y1 - y0, // ALWAYS positive
     };
   });
 }

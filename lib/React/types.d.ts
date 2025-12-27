@@ -1,3 +1,4 @@
 import type { AnyChartLayer } from "../Core/Layer/AnyChartLayer";
+import type { ScaleManager } from "../Core/Scales/ScaleManager";
 
-export type GraphFactory = (width: number, height: number) => AnyChartLayer;
+export type GraphFactory = (scales: ScaleManager) => AnyChartLayer;

@@ -4,7 +4,7 @@ import { ChartRoot } from "../Core/ChartRoot";
 import { BarLayer } from "../Core/Layer/BarLayer";
 import { createBarRenderer } from "./Factories/Factories";
 import type { BarData } from "../Core/Types/types";
-import { NoAnimationPolicy } from "../Core/Animation/AnimationPolicies";
+import { BarGrowPolicy } from "../Core/Animation/AnimationPolicies";
 
 type Props = {
   data: BarData[];
@@ -21,17 +21,13 @@ export function BarChart({ data, width, height }: Props) {
   useLayoutEffect(() => {
     if (!svgRef.current) return;
 
-    const engine = new ChartEngine(svgRef.current);
+    const engine = new ChartEngine(svgRef.current, width, height);
     const root = new ChartRoot(engine);
 
-    const layer = new BarLayer(
-      createBarRenderer("svg"),
-      width,
-      height,
-      new NoAnimationPolicy(),
-    );
+    const layer = new BarLayer(createBarRenderer("svg"), new BarGrowPolicy());
 
     layer.setData(data);
+
     engine.addLayer(layer);
 
     root.start();
@@ -49,6 +45,7 @@ export function BarChart({ data, width, height }: Props) {
   // data updates
   useLayoutEffect(() => {
     layerRef.current?.setData(data);
+    chartRef.current?.reflow();
   }, [data]);
 
   function onPointerMove(e: React.MouseEvent) {

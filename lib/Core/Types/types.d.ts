@@ -10,13 +10,20 @@ export type RendererType =
   | "webgpu-3d";
 
 export type BarData = {
-  label: string | number | Date;
+  label: string | number;
   value: number;
 };
 
-export type XValue = number | Date;
-
-export type LineData<X extends XValue = number> = {
-  x: X;
+export type LineData = {
+  x: number | string;
   y: number;
 };
+
+export type ScaleId =
+  | "x"
+  | "y"
+  | "x:secondary"
+  | "y:secondary"
+  | `color:${string}`;
+
+export type Domain = Partial<Record<ScaleId, any>>;

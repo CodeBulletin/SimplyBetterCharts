@@ -1,5 +1,4 @@
-// Core/Layer/ChartLayer.ts
-import type { Picker } from "../Types/types";
+import type { Picker } from "../../Types/types";
 
 export interface ChartLayer<T> {
   setPicker(picker: Picker<T>): void;

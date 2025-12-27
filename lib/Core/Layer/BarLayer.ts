@@ -1,37 +1,32 @@
-import type { AnyChartLayer } from "./AnyChartLayer";
-import type { Rect, BarData, Picker } from "../Types/types";
+import type { AnyChartLayer } from "./Interface/AnyChartLayer";
+import type { Rect, BarData, Picker, Domain } from "../Types/types";
 import { processBarData } from "../DataProcessor/Processor";
 import { barPicker } from "../Picker/Picker";
 import type { BarRenderer } from "../Renderer/Interface/Renderers";
-import type { ChartLayer } from "./ChartLayer";
+import type { ChartLayer } from "./Interface/ChartLayer";
 import type { AnimationPolicy } from "../Animation/AnimationPolicy";
 import { AnimationController } from "../Animation/AnimationController";
+import type { ScaledLayer } from "./Interface/ScaledLayer";
+import type { ScaleManager } from "../Scales/ScaleManager";
 
-export class BarLayer implements AnyChartLayer, ChartLayer<Rect> {
+export class BarLayer implements AnyChartLayer, ChartLayer<Rect>, ScaledLayer {
   readonly id = "bars";
 
+  private rawData: BarData[] = [];
   private data: Rect[] = [];
   private from: Rect[] = [];
   private hovered: number | null = null;
   private picker: Picker<Rect> = barPicker;
 
   private readonly renderer: BarRenderer;
-  private readonly width: number;
-  private readonly height: number;
 
   private first: boolean;
   private readonly policy: AnimationPolicy<Rect>;
   private readonly anim = new AnimationController();
+  private scales!: ScaleManager;
 
-  constructor(
-    renderer: BarRenderer,
-    width: number,
-    height: number,
-    policy: AnimationPolicy<Rect>,
-  ) {
+  constructor(renderer: BarRenderer, policy: AnimationPolicy<Rect>) {
     this.renderer = renderer;
-    this.width = width;
-    this.height = height;
     this.policy = policy;
     this.first = true;
   }
@@ -41,11 +36,18 @@ export class BarLayer implements AnyChartLayer, ChartLayer<Rect> {
   }
 
   setData(data: BarData[]) {
-    const next = processBarData(data, this.width, this.height);
+    this.rawData = data;
+  }
+
+  rescale(): void {
+    if (!this.scales) return;
+    const next = processBarData(this.rawData, this.scales);
+
+    const zeroY = this.scales.get("y").map(0);
 
     this.from = this.policy.start(next, {
-      width: this.width,
-      height: this.height,
+      width: this.scales.width,
+      height: zeroY,
       isFirstRender: this.first,
     });
 
@@ -92,5 +94,16 @@ export class BarLayer implements AnyChartLayer, ChartLayer<Rect> {
 
   clearHover() {
     this.hovered = null;
+  }
+
+  setScales(scales: ScaleManager): void {
+    this.scales = scales;
+  }
+
+  computeDomain(): Domain {
+    return {
+      x: this.rawData.map((d) => d.label),
+      y: [0, Math.max(...this.rawData.map((d) => d.value))],
+    };
   }
 }

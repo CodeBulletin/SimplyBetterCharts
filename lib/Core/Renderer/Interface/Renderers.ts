@@ -1,5 +1,3 @@
-// Core/Renderer/BarRenderer.ts
-
 import type { Point, Rect } from "../../Types/types";
 
 export interface BarRenderer {

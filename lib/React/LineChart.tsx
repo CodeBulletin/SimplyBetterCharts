@@ -4,7 +4,7 @@ import { ChartRoot } from "../Core/ChartRoot";
 import { LineLayer } from "../Core/Layer/LineLayer";
 import { createLineRenderer } from "./Factories/Factories";
 import type { LineData } from "../Core/Types/types";
-import { NoAnimationPolicy } from "../Core/Animation/AnimationPolicies";
+import { LineBaselinePolicy } from "../Core/Animation/AnimationPolicies";
 
 type Props = {
   data: LineData[];
@@ -22,17 +22,16 @@ export function LineChart({ data, width, height, renderer = "svg" }: Props) {
   useLayoutEffect(() => {
     if (!svgRef.current) return;
 
-    const engine = new ChartEngine(svgRef.current);
+    const engine = new ChartEngine(svgRef.current, width, height);
     const root = new ChartRoot(engine);
 
     const layer = new LineLayer(
       createLineRenderer(renderer),
-      width,
-      height,
-      new NoAnimationPolicy(),
+      new LineBaselinePolicy(),
     );
 
     layer.setData(data);
+
     engine.addLayer(layer);
 
     root.start();
@@ -50,6 +49,7 @@ export function LineChart({ data, width, height, renderer = "svg" }: Props) {
   /* ---------- data updates ---------- */
   useLayoutEffect(() => {
     layerRef.current?.setData(data);
+    chartRef.current?.reflow();
   }, [data]);
 
   /* ---------- pointer handling ---------- */

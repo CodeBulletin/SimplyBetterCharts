@@ -16,11 +16,11 @@ export function StackedChart({ width, height, graphs }: Props) {
   useLayoutEffect(() => {
     if (!svgRef.current) return;
 
-    const engine = new ChartEngine(svgRef.current);
+    const engine = new ChartEngine(svgRef.current, width, height);
     const root = new ChartRoot(engine);
 
     for (const createGraph of graphs) {
-      const graph = createGraph(width, height);
+      const graph = createGraph(engine.scales);
       engine.addLayer(graph);
     }
 

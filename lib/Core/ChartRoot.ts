@@ -48,6 +48,10 @@ export class ChartRoot {
     this.lastTime = 0;
   }
 
+  reflow() {
+    this.engine.reflow();
+  }
+
   invalidate() {
     if (this.stopped) return;
     if (this.rafId === null) {

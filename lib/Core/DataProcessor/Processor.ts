@@ -1,42 +1,39 @@
-// src/charts/processLineData.ts
+import type { LineData, BarData, Point, Rect } from "../Types/types";
+import type { ScaleManager } from "../Scales/ScaleManager";
 
-import type { BarData, LineData, Point, Rect } from "../Types/types.d";
-import { toNumber } from "../Helper/Helper";
-
-export function processPointData<X extends number | Date>(
-  data: LineData<X>[],
-  width: number,
-  height: number,
+export function processLineData(
+  data: LineData[],
+  scales: ScaleManager,
 ): Point[] {
-  const xs = data.map((d) => toNumber(d.x));
-  const ys = data.map((d) => d.y);
-
-  const minX = Math.min(...xs);
-  const maxX = Math.max(...xs);
-  const minY = Math.min(...ys);
-  const maxY = Math.max(...ys);
+  const x = scales.get("x");
+  const y = scales.get("y");
 
   return data.map((d) => ({
-    x: ((toNumber(d.x) - minX) / (maxX - minX)) * width,
-    y: height - ((d.y - minY) / (maxY - minY)) * height,
+    x: x.map(d.x),
+    y: y.map(d.y),
   }));
 }
 
-export function processBarData(
-  data: BarData[],
-  width: number,
-  height: number,
-): Rect[] {
-  const maxY = Math.max(...data.map((d) => d.value));
-  const barWidth = width / data.length;
+export function processBarData(data: BarData[], scales: ScaleManager): Rect[] {
+  const x = scales.get("x");
+  const y = scales.get("y");
 
-  return data.map((d, i) => {
-    const h = (d.value / maxY) * height;
+  if (!("bandwidth" in x)) {
+    throw new Error("Bar chart requires a band scale on x axis");
+  }
+
+  const w = x.bandwidth;
+
+  return data.map((d) => {
+    const cx = x.map(d.label);
+    const top = y.map(d.value);
+    const bottom = y.map(0);
+
     return {
-      x: i * barWidth + 2,
-      y: height - h,
-      w: barWidth - 4,
-      h,
+      x: cx - w / 2,
+      y: top,
+      w,
+      h: bottom - top,
     };
   });
 }

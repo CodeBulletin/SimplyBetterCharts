@@ -1,5 +1,3 @@
-// Core/Layer/AnyChartLayer.ts
-
 export interface AnyChartLayer {
   readonly id: string;
 
@@ -8,6 +6,8 @@ export interface AnyChartLayer {
 
   /** returns null if layer is not pickable */
   pick(x: number, y: number): boolean;
+
+  rescale(): void;
 
   clearHover(): void;
   destroy(): void;

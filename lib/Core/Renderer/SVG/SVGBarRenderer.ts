@@ -1,5 +1,3 @@
-// Renderer/SVG/SVGBarRenderer.ts
-
 import type { Rect } from "../../Types/types.d";
 import type { BarRenderer } from "../Interface/Renderers";
 

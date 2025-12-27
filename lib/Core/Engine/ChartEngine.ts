@@ -1,7 +1,7 @@
 import type { AnyChartLayer } from "../Layer/Interface/AnyChartLayer";
 import type { ScaledLayer } from "../Layer/Interface/ScaledLayer";
 import { ScaleManager } from "../Scales/ScaleManager";
-import type { ContinuousDomain, DomainValue, ScaleId } from "../Types/types";
+import type { DomainValue, ScaleId } from "../Types/types";
 
 const DEFAULT_MARGIN = {
   top: 20,
@@ -135,7 +135,7 @@ export class ChartEngine {
 
   private applyDomains(collected: Map<ScaleId, DomainValue[]>) {
     for (const [id, values] of collected) {
-      const scale = this.scales.get(id as any);
+      const scale = this.scales.get(id as ScaleId);
 
       const sample = values[0];
 
@@ -159,16 +159,6 @@ export class ChartEngine {
         );
 
         scale.setDomain(categories);
-
-        if (id === "x" && "domainValues" in scale) {
-          console.log(
-            "[Band scale debug]",
-            "Bands:",
-            scale.domainValues.length,
-            "Categories:",
-            scale.domainValues,
-          );
-        }
       }
     }
   }

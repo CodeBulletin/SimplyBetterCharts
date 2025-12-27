@@ -2,6 +2,7 @@ import type { AnyChartLayer } from "./Interface/AnyChartLayer";
 import type { ScaledLayer } from "./Interface/ScaledLayer";
 import type { ScaleManager } from "../Scales/ScaleManager";
 import type { AxisRenderer, AxisTick } from "../Renderer/Interface/Renderers";
+import type { CategoricalDomain, ContinuousDomain } from "../Types/types";
 
 export class AxisLayer implements AnyChartLayer, ScaledLayer {
   readonly id: string;
@@ -67,7 +68,7 @@ export class AxisLayer implements AnyChartLayer, ScaledLayer {
        BAND SCALE (categorical)
     ------------------------------ */
     if ("domainValues" in scale) {
-      for (const value of scale.domainValues) {
+      for (const value of scale.domainValues as CategoricalDomain) {
         const p = scale.map(value);
 
         if (this.orientation === "bottom") {
@@ -100,7 +101,7 @@ export class AxisLayer implements AnyChartLayer, ScaledLayer {
        LINEAR SCALE (continuous)
     ------------------------------ */
     if ("domain" in scale) {
-      const [d0, d1] = scale.domain;
+      const [d0, d1] = scale.domain as ContinuousDomain;
       const step = (d1 - d0) / (LINEAR_TICK_COUNT - 1);
 
       for (let i = 0; i < LINEAR_TICK_COUNT; i++) {

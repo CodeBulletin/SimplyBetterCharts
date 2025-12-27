@@ -35,7 +35,7 @@ export class LineUpdatePolicy implements AnimationPolicy<Point> {
 
   start(next: Point[], ctx: AnimationContext): Point[] {
     // Start from previous rendered data
-    return ctx.previous ?? next;
+    return (ctx.previous as Point[]) ?? next;
   }
 
   interpolate(from: Point[], to: Point[], t: number): Point[] {

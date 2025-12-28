@@ -1,12 +1,18 @@
 import type { Point, Rect } from "../../Types/types";
 
-export interface BarRenderer {
+export interface Renderer<T> {
+  init(container: SVGSVGElement): void;
+  draw(data: T[], hovered: number | null): void;
+  destroy(): void;
+}
+
+export interface BarRenderer extends Renderer<Rect> {
   init(container: SVGSVGElement): void;
   draw(data: Rect[], hovered: number | null): void;
   destroy(): void;
 }
 
-export interface LineRenderer {
+export interface LineRenderer extends Renderer<Point> {
   init(container: SVGSVGElement): void;
   draw(data: Point[], hovered: number | null): void;
   destroy(): void;
@@ -27,7 +33,7 @@ export interface AxisRenderData {
   ticks: AxisTick[];
 }
 
-export interface AxisRenderer {
+export interface AxisRenderer extends Renderer<Rect> {
   init(svg: SVGSVGElement): void;
   render(data: AxisRenderData): void;
   destroy(): void;

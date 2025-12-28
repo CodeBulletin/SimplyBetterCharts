@@ -1,13 +1,13 @@
-// React/factories/createBarRenderer.ts
-import { SVGBarRenderer } from "../../Core/Renderer/SVG/SVGBarRenderer";
-import { SVGLineRenderer } from "../../Core/Renderer/SVG/SVGLineRenderer";
 import type {
   AxisRenderer,
   BarRenderer,
   LineRenderer,
-} from "../../Core/Renderer/Interface/Renderers";
-import type { RendererType } from "../../Core/Types/types";
-import { SVGAxisRenderer } from "../../Core/Renderer/SVG/SVGAxisRenderer";
+} from "../Renderer/Interface/Renderers";
+import type { RendererType } from "../Types/types";
+
+import { SVGBarRenderer } from "../Renderer/SVG/SVGBarRenderer";
+import { SVGLineRenderer } from "../Renderer/SVG/SVGLineRenderer";
+import { SVGAxisRenderer } from "../Renderer/SVG/SVGAxisRenderer";
 
 export function createBarRenderer(type: RendererType): BarRenderer {
   switch (type) {

@@ -27,6 +27,8 @@ export class ChartEngine {
     for (const layer of this.layers) {
       layer.destroy?.();
     }
+    this.layers.length = 0;
+    this.dirty = false;
   }
 
   addLayer(layer: AnyChartLayer & Partial<ScaledLayer>) {
@@ -99,6 +101,7 @@ export class ChartEngine {
 
   private ensureScaleTypes(collected: Map<ScaleId, DomainValue[]>) {
     for (const [id, values] of collected) {
+      // console.trace(id, values);
       const sample = values[0];
 
       if (id === "x" && collected.get("x")!.length > 1) {

@@ -10,6 +10,10 @@ export class ChartRoot {
     this.engine = engine;
   }
 
+  isStoped() {
+    return this.stopped;
+  }
+
   private loop = (time: number) => {
     if (this.stopped) return;
 

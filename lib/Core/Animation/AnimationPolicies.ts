@@ -1,14 +1,20 @@
 import type { AnimationPolicy } from "./AnimationPolicy";
-import type { Point } from "../Types/types";
+import type { EasingFn, Point } from "../Types/types";
 import { lerp, easeOutCubic } from "./helper";
 import type { AnimationContext } from "./AnimationContext";
 import type { Rect } from "../Types/types";
 
 export class LineBaselinePolicy implements AnimationPolicy<Point> {
   duration = 0.4;
+  easingFn: EasingFn;
+
+  constructor(duration: number, easingFn: EasingFn) {
+    this.duration = duration;
+    this.easingFn = easingFn;
+  }
 
   ease(t: number) {
-    return easeOutCubic(t);
+    return this.easingFn(t);
   }
 
   start(next: Point[], ctx: AnimationContext): Point[] {
@@ -27,10 +33,16 @@ export class LineBaselinePolicy implements AnimationPolicy<Point> {
 }
 
 export class LineUpdatePolicy implements AnimationPolicy<Point> {
-  readonly duration = 0.3;
+  duration = 0.4;
+  easingFn: EasingFn;
+
+  constructor(duration: number, easingFn: EasingFn) {
+    this.duration = duration;
+    this.easingFn = easingFn;
+  }
 
   ease(t: number) {
-    return easeOutCubic(t);
+    return this.easingFn(t);
   }
 
   start(next: Point[], ctx: AnimationContext): Point[] {

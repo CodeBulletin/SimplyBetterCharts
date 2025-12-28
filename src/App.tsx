@@ -1,17 +1,5 @@
-import { useEffect, useState } from "react";
-import {
-  LineChart,
-  BarChart,
-  StackedChart,
-  BarGraph,
-  LineGraph,
-} from "../lib/main";
-
-/* --------------------------------
-   TYPES
---------------------------------- */
-type LinePoint = { x: number | string; y: number };
-type BarPoint = { label: string; value: number };
+import { useEffect, useMemo, useState } from "react";
+import { LineChart, BarChart, CompositeChart } from "../lib/main";
 
 /* --------------------------------
    HELPERS
@@ -20,95 +8,102 @@ function random(min = -50, max = 50) {
   return Math.round(min + Math.random() * (max - min));
 }
 
+function nextLabel(i: number) {
+  return String.fromCharCode(65 + i);
+}
+
 /* --------------------------------
    APP
 --------------------------------- */
 export default function App() {
-  /* ---------- dynamic numeric line ---------- */
-  const [numericLine, setNumericLine] = useState<LinePoint[]>([
-    { x: 0, y: 10 },
-    { x: 1, y: 25 },
-    { x: 2, y: 15 },
-  ]);
+  /* ---------- DATA ---------- */
+  const [bars, setBars] = useState([{ label: "A", value: 10 }]);
 
-  /* ---------- dynamic categorical line ---------- */
-  const [categoryLine, setCategoryLine] = useState<LinePoint[]>([
-    { x: "A", y: 12 },
-    { x: "B", y: 28 },
-    { x: "C", y: 18 },
-  ]);
+  const [lineA, setLineA] = useState([{ x: "A", y: 10 }]);
 
-  const [categoryLine2, setCategoryLine2] = useState<LinePoint[]>([
-    { x: "A", y: 10 },
-    { x: "B", y: 30 },
-    { x: "C", y: 20 },
-  ]);
+  const [lineB, setLineB] = useState([{ x: "A", y: 10 }]);
 
-  /* ---------- dynamic bars ---------- */
-  const [bars, setBars] = useState<BarPoint[]>([
-    { label: "A", value: 10 },
-    { label: "B", value: 30 },
-    { label: "C", value: 20 },
-  ]);
+  /* ---------- VISIBILITY TOGGLES ---------- */
+  const [showLineA, setShowLineA] = useState(true);
+  const [showLineB, setShowLineB] = useState(false);
+  const [showThreshold, setShowThreshold] = useState(false);
 
-  /* --------------------------------
-     DYNAMIC UPDATE LOOP
-  --------------------------------- */
+  /* ---------- LIVE DATA UPDATE ---------- */
   useEffect(() => {
     const id = setInterval(() => {
-      setNumericLine((prev) => [...prev, { x: prev.length, y: random() }]);
-
-      setCategoryLine((prev) => {
-        const nextLabel = String.fromCharCode(65 + prev.length);
-        return [...prev, { x: nextLabel, y: random() }];
-      });
-
       const y = random();
-      setBars((prev) => {
-        const nextLabel = String.fromCharCode(65 + prev.length);
-        return [...prev, { label: nextLabel, value: y }];
-      });
 
-      setCategoryLine2((prev) => {
-        const nextLabel = String.fromCharCode(65 + prev.length);
-        return [...prev, { x: nextLabel, y: y }];
-      });
+      setBars((prev) => [...prev, { label: nextLabel(prev.length), value: y }]);
+
+      setLineA((prev) => [...prev, { x: nextLabel(prev.length), y: y }]);
+
+      setLineB((prev) => [...prev, { x: nextLabel(prev.length), y: random() }]);
     }, 1500);
 
     return () => clearInterval(id);
   }, []);
 
   /* --------------------------------
-     RENDER
+     COMPOSITE LAYERS (DYNAMIC)
+  --------------------------------- */
+  const compositeLayers = useMemo(() => {
+    const layers: any[] = [];
+
+    // Bars are always present
+    layers.push({
+      id: "bars",
+      type: "bar",
+      data: bars,
+      zIndex: 10,
+    });
+
+    // Optional Line A
+    if (showLineA) {
+      layers.push({
+        id: "line-a",
+        type: "line",
+        data: lineA,
+        zIndex: 20,
+      });
+    }
+
+    // Optional Line B
+    if (showLineB) {
+      layers.push({
+        id: "line-b",
+        type: "line",
+        data: lineB,
+        zIndex: 30,
+      });
+    }
+
+    return layers;
+  }, [bars, lineA, lineB, showLineA, showLineB, showThreshold]);
+
+  /* --------------------------------
+     UI
   --------------------------------- */
   return (
-    <div style={{ display: "grid", gap: 32 }}>
-      {/* ---------- LIVE LINE (LINEAR) ---------- */}
-      <section>
-        <h3>Live LineChart – Numeric X</h3>
-        <LineChart data={numericLine} width={500} height={300} />
-      </section>
+    <div style={{ display: "grid", gap: 24 }}>
+      <h2>Dynamic CompositeChart</h2>
 
-      {/* ---------- LIVE LINE (CATEGORICAL) ---------- */}
-      <section>
-        <h3>Live LineChart – Categorical X</h3>
-        <LineChart data={categoryLine} width={500} height={300} />
-      </section>
+      <div style={{ display: "flex", gap: 12 }}>
+        <button onClick={() => setShowLineA((v) => !v)}>Toggle Line A</button>
+        <button onClick={() => setShowLineB((v) => !v)}>Toggle Line B</button>
+        <button onClick={() => setShowThreshold((v) => !v)}>
+          Toggle Threshold
+        </button>
+      </div>
 
-      {/* ---------- LIVE BAR ---------- */}
-      <section>
-        <h3>Live BarChart</h3>
-        <BarChart data={bars} width={500} height={300} />
-      </section>
+      <CompositeChart width={600} height={350} layers={compositeLayers} />
 
-      {/* ---------- LIVE STACKED ---------- */}
+      <hr />
+
+      {/* Independent charts still work */}
       <section>
-        <h3>Live StackedChart (Bar + Line)</h3>
-        <StackedChart
-          width={500}
-          height={300}
-          graphs={[BarGraph(bars), LineGraph(categoryLine2)]}
-        />
+        <h3>Independent Charts</h3>
+        <LineChart data={lineA} />
+        <BarChart data={bars} />
       </section>
     </div>
   );

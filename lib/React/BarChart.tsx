@@ -1,52 +1,45 @@
 import { useLayoutEffect, useRef } from "react";
-import { ChartEngine } from "../Core/Engine/ChartEngine";
-import { ChartRoot } from "../Core/ChartRoot";
 import { BarLayer } from "../Core/Layer/BarLayer";
-import { createAxisRenderer, createBarRenderer } from "./Factories/Factories";
 import type { BarData } from "../Core/Types/types";
-import {
-  BarGrowPolicy,
-  NoAnimationPolicy,
-} from "../Core/Animation/AnimationPolicies";
 import { AxisLayer } from "../Core/Layer/AxisLayer";
+import type { BarChartOptions } from "../Core/Types/lib";
+import { resolveAxisRenderer } from "../Core/Defaults/resolves";
+import { createLayer } from "../Core/Layer/LayerRegistry";
+import { useChartEngine } from "./useChartEngine";
 
 type Props = {
   data: BarData[];
-  width: number;
-  height: number;
+  chartOptions?: BarChartOptions;
 };
 
-export function BarChart({ data, width, height }: Props) {
+export function BarChart({ data, chartOptions }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
-  const chartRef = useRef<ChartRoot | null>(null);
   const layerRef = useRef<BarLayer | null>(null);
 
-  // 🔒 DOM-safe initialization
+  const { rootRef, engineRef } = useChartEngine(
+    svgRef,
+    chartOptions?.width ?? 500,
+    chartOptions?.height ?? 500,
+  );
+
   useLayoutEffect(() => {
-    if (!svgRef.current) return;
+    if (!svgRef.current || !engineRef.current || !rootRef.current) return;
 
-    const engine = new ChartEngine(svgRef.current, width, height);
-    const root = new ChartRoot(engine);
+    const engine = engineRef.current;
 
-    const layer = new BarLayer(createBarRenderer("svg"), {
-      initial: new BarGrowPolicy(),
-      update: new NoAnimationPolicy(),
-    });
+    const layer = createLayer("bar", chartOptions) as BarLayer;
 
-    layer.setData(data);
-
-    engine.addLayer(new AxisLayer("bottom", createAxisRenderer("svg")));
-    engine.addLayer(new AxisLayer("left", createAxisRenderer("svg")));
+    engine.addLayer(
+      new AxisLayer("bottom", resolveAxisRenderer(chartOptions?.renderer)),
+    );
+    engine.addLayer(
+      new AxisLayer("left", resolveAxisRenderer(chartOptions?.renderer)),
+    );
     engine.addLayer(layer);
 
-    root.start();
-
-    chartRef.current = root;
     layerRef.current = layer;
 
     return () => {
-      root.stop();
-      chartRef.current = null;
       layerRef.current = null;
     };
   }, []); // run once
@@ -54,26 +47,23 @@ export function BarChart({ data, width, height }: Props) {
   // data updates
   useLayoutEffect(() => {
     layerRef.current?.setData(data);
-    chartRef.current?.reflow();
+    rootRef.current?.reflow();
   }, [data]);
 
   function onPointerMove(e: React.MouseEvent) {
     const rect = svgRef.current!.getBoundingClientRect();
-    chartRef.current?.onPointerMove(
-      e.clientX - rect.left,
-      e.clientY - rect.top,
-    );
+    rootRef.current?.onPointerMove(e.clientX - rect.left, e.clientY - rect.top);
   }
 
   return (
     <svg
       ref={svgRef}
-      width={width}
-      height={height}
+      width={chartOptions?.width ?? 500}
+      height={chartOptions?.height ?? 500}
       onPointerMove={onPointerMove}
-      onPointerLeave={() => chartRef.current?.clearHover()}
-      onPointerCancel={() => chartRef.current?.clearHover()}
-      onPointerUp={() => chartRef.current?.clearHover()}
+      onPointerLeave={() => rootRef.current?.clearHover()}
+      onPointerCancel={() => rootRef.current?.clearHover()}
+      onPointerUp={() => rootRef.current?.clearHover()}
     />
   );
 }

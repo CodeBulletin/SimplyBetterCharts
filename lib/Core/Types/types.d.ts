@@ -1,3 +1,5 @@
+import type { EasingName } from "../Animation/helper";
+
 export type Point = { x: number; y: number };
 export type Rect = { x: number; y: number; w: number; h: number };
 export type Picker<T> = (data: T[], x: number, y: number) => number | null;
@@ -33,3 +35,16 @@ export type CategoricalDomain = (string | number)[];
 export type DomainValue = ContinuousDomain | CategoricalDomain;
 
 export type Domain = Partial<Record<ScaleId, DomainValue>>;
+
+export type EasingFn = (t: number) => number;
+
+export type ResolvedAnimationOptions = {
+  enabled: true;
+  duration: number;
+  easing: EasingName;
+};
+
+export type ResolvedLineOptions = {
+  renderer: RendererType;
+  animation: ResolvedAnimationOptions;
+};

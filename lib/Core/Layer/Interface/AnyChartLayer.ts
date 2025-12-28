@@ -1,3 +1,5 @@
+import type { Primitive } from "../../Primitives/Primitives";
+
 export interface AnyChartLayer {
   readonly id: string;
 
@@ -11,4 +13,6 @@ export interface AnyChartLayer {
 
   clearHover(): void;
   destroy(): void;
+
+  getPrimitives(): Primitive[];
 }

@@ -1,4 +1,5 @@
-import { ChartEngine } from "./Engine/ChartEngine";
+import type { ChartEngine } from "../Core/Engine/ChartEngine";
+import { SVGRenderer } from "./Renderer/SVG/SVGRenderer";
 
 export class ChartRoot {
   private rafId: number | null = null;
@@ -6,8 +7,11 @@ export class ChartRoot {
   private stopped = false;
 
   private readonly engine;
-  constructor(engine: ChartEngine) {
+  private readonly renderer;
+
+  constructor(engine: ChartEngine, svg: SVGSVGElement) {
     this.engine = engine;
+    this.renderer = new SVGRenderer(svg); // 🔑 Renderer owns container
   }
 
   isStoped() {
@@ -21,7 +25,8 @@ export class ChartRoot {
     const dt = (time - this.lastTime) / 1000;
     this.lastTime = time;
 
-    const needsMore = this.engine.draw(dt);
+    const { primitives, needsMore } = this.engine.draw(dt);
+    this.renderer.render(primitives);
 
     if (needsMore) {
       this.rafId = requestAnimationFrame(this.loop);
@@ -47,6 +52,7 @@ export class ChartRoot {
       this.rafId = null;
     }
 
+    this.renderer.destroy(); // 🔑 cleanup DOM
     this.engine.stop();
 
     this.lastTime = 0;

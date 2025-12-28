@@ -1,5 +1,4 @@
 import type { EasingName } from "../Animation/helper";
-import type { RendererType } from "./types";
 
 export interface ChartOptions {
   width: number;
@@ -12,7 +11,6 @@ export interface ChartOptions {
     left: number;
   }>;
 
-  renderer?: RendererType;
   animation?: AnimationOptions;
 }
 

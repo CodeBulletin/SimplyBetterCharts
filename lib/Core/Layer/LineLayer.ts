@@ -1,30 +1,20 @@
 import type { LineData, Point, Domain } from "../Types/types";
 import { processLineData } from "../DataProcessor/Processor";
 import { linePicker } from "../Picker/Picker";
-import type { LineRenderer } from "../Renderer/Interface/Renderers";
 import type { AnimationPolicy } from "../Animation/AnimationPolicy";
 import type { AnimationStage } from "../Types/types";
 import type { ScaleManager } from "../Scales/ScaleManager";
-import type { ScaledLayer } from "./Interface/ScaledLayer";
 
 import { BaseDataLayer } from "./BaseDataLayer";
 import { registerLayer } from "./LayerRegistry";
-import {
-  resolveLineAnimationPolicies,
-  resolveLineRenderer,
-} from "../Defaults/resolves";
+import { resolveLineAnimationPolicies } from "../Defaults/resolves";
+import type { Primitive } from "../Primitives/Primitives";
 
-export class LineLayer
-  extends BaseDataLayer<LineData, Point>
-  implements ScaledLayer
-{
+export class LineLayer extends BaseDataLayer<LineData, Point> {
   public readonly id = "line";
 
-  constructor(
-    renderer: LineRenderer,
-    policies: Record<AnimationStage, AnimationPolicy<Point>>,
-  ) {
-    super(renderer, policies);
+  constructor(policies: Record<AnimationStage, AnimationPolicy<Point>>) {
+    super(policies);
     this.picker = linePicker;
   }
 
@@ -33,8 +23,47 @@ export class LineLayer
     return processLineData(this.rawData, this.scales);
   }
 
-  protected rendererDraw(data: Point[], hovered: number | null): void {
-    this.renderer.draw(data, hovered);
+  protected buildPrimitives(points: Point[]): Primitive[] {
+    if (points.length === 0) return [];
+
+    const path = "M " + points.map((p) => `${p.x} ${p.y}`).join(" L ");
+
+    const hovered = this.hovered !== null ? points[this.hovered] : null;
+
+    const primitives: Primitive[] = [
+      {
+        type: "path",
+        id: "line:path",
+        d: path,
+        style: {
+          stroke: hovered ? "orange" : "steelblue",
+          strokeWidth: hovered ? 4 : 2,
+          fill: "none",
+        },
+        pickable: true,
+        zIndex: 1,
+      },
+    ];
+
+    // Optional hover marker
+    if (hovered) {
+      primitives.push({
+        type: "circle",
+        id: "line:hover",
+        cx: hovered.x,
+        cy: hovered.y,
+        r: 5,
+        style: {
+          fill: "orange",
+          stroke: "white",
+          strokeWidth: 2,
+        },
+        pickable: false,
+        zIndex: 2,
+      });
+    }
+
+    return primitives;
   }
 
   computeDomain(): Domain | undefined {
@@ -66,9 +95,5 @@ export class LineLayer
 
 registerLayer(
   "line",
-  (options) =>
-    new LineLayer(
-      resolveLineRenderer(options?.renderer),
-      resolveLineAnimationPolicies(options?.animation),
-    ),
+  (options) => new LineLayer(resolveLineAnimationPolicies(options?.animation)),
 );

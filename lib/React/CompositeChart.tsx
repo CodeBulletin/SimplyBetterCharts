@@ -2,7 +2,6 @@ import { useLayoutEffect, useRef } from "react";
 import type { AnyChartLayer } from "../Core/Layer/Interface/AnyChartLayer";
 import type { DataLayer } from "../Core/Layer/Interface/DataLayer";
 import { AxisLayer } from "../Core/Layer/AxisLayer";
-import { createAxisRenderer } from "../Core/Factories/Factories";
 import { createLayer } from "../Core/Layer/LayerRegistry";
 import { useChartEngine } from "./useChartEngine";
 import type { LayerDescriptor } from "./CompositeChartHelper";
@@ -31,12 +30,8 @@ export function CompositeChart({ width, height, layers }: Props) {
 
     layerMapRef.current = new Map(); // 🔑 recreate instead of clear
 
-    engineRef.current.addLayer(
-      new AxisLayer("bottom", createAxisRenderer("svg")),
-    );
-    engineRef.current.addLayer(
-      new AxisLayer("left", createAxisRenderer("svg")),
-    );
+    engineRef.current.addLayer(new AxisLayer("bottom"));
+    engineRef.current.addLayer(new AxisLayer("left"));
   }, []);
 
   /* ---------- reconcile dynamic layers ---------- */

@@ -1,11 +1,10 @@
 import { useLayoutEffect, useRef } from "react";
 import { LineLayer } from "../Core/Layer/LineLayer";
 import type { LineData } from "../Core/Types/types";
-import { AxisLayer } from "../Core/Layer/AxisLayer";
 import type { LineChartOptions } from "../Core/Types/lib";
-import { resolveAxisRenderer } from "../Core/Defaults/resolves";
 import { useChartEngine } from "./useChartEngine";
 import { createLayer } from "../Core/Layer/LayerRegistry";
+import { AxisLayer } from "../Core/Layer/AxisLayer";
 
 type Props = {
   data: LineData[];
@@ -29,12 +28,8 @@ export function LineChart({ data, chartOptions }: Props) {
 
     const layer = createLayer("line", chartOptions) as LineLayer;
 
-    engine.addLayer(
-      new AxisLayer("bottom", resolveAxisRenderer(chartOptions?.renderer)),
-    );
-    engine.addLayer(
-      new AxisLayer("left", resolveAxisRenderer(chartOptions?.renderer)),
-    );
+    engine.addLayer(new AxisLayer("bottom"));
+    engine.addLayer(new AxisLayer("left"));
     engine.addLayer(layer);
 
     layerRef.current = layer;

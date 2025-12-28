@@ -3,7 +3,7 @@ import { BarLayer } from "../Core/Layer/BarLayer";
 import type { BarData } from "../Core/Types/types";
 import { AxisLayer } from "../Core/Layer/AxisLayer";
 import type { BarChartOptions } from "../Core/Types/lib";
-import { resolveAxisRenderer } from "../Core/Defaults/resolves";
+// import { resolveAxisRenderer } from "../Core/Defaults/resolves";
 import { createLayer } from "../Core/Layer/LayerRegistry";
 import { useChartEngine } from "./useChartEngine";
 
@@ -29,12 +29,8 @@ export function BarChart({ data, chartOptions }: Props) {
 
     const layer = createLayer("bar", chartOptions) as BarLayer;
 
-    engine.addLayer(
-      new AxisLayer("bottom", resolveAxisRenderer(chartOptions?.renderer)),
-    );
-    engine.addLayer(
-      new AxisLayer("left", resolveAxisRenderer(chartOptions?.renderer)),
-    );
+    engine.addLayer(new AxisLayer("bottom"));
+    engine.addLayer(new AxisLayer("left"));
     engine.addLayer(layer);
 
     layerRef.current = layer;

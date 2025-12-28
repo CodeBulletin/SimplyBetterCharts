@@ -5,18 +5,19 @@ import { AnimationController } from "../Animation/AnimationController";
 import type { ScaledLayer } from "./Interface/ScaledLayer";
 import type { ScaleManager } from "../Scales/ScaleManager";
 import type { DataLayer } from "./Interface/DataLayer";
-import type { Renderer } from "../Renderer/Interface/Renderers";
+import type { Primitive } from "../Primitives/Primitives";
+import type { ChartLayer } from "./Interface/ChartLayer";
 
 export abstract class BaseDataLayer<TData, TRender>
-  implements AnyChartLayer, ScaledLayer, DataLayer<TData>
+  implements AnyChartLayer, ScaledLayer, DataLayer<TData>, ChartLayer<TRender>
 {
   protected rawData: TData[] = [];
   protected data: TRender[] = [];
+  protected primitives: Primitive[] = [];
   protected from: TRender[] = [];
   protected hovered: number | null = null;
 
   protected first = true;
-  protected renderer: Renderer<TRender>;
   protected policies: Record<AnimationStage, AnimationPolicy<TRender>>;
   protected anim = new AnimationController();
   protected scales!: ScaleManager;
@@ -24,24 +25,16 @@ export abstract class BaseDataLayer<TData, TRender>
   protected picker!: Picker<TRender>;
 
   public abstract readonly id: string;
-  protected abstract process(): TRender[];
-  protected abstract rendererDraw(
-    data: TRender[],
-    hovered: number | null,
-  ): void;
 
-  constructor(
-    renderer: Renderer<TRender>,
-    policies: Record<AnimationStage, AnimationPolicy<TRender>>,
-  ) {
-    this.renderer = renderer;
+  protected abstract buildPrimitives(data: TRender[]): Primitive[];
+  protected abstract process(): TRender[];
+
+  constructor(policies: Record<AnimationStage, AnimationPolicy<TRender>>) {
     this.policies = policies;
     this.first = true;
   }
 
-  init(svg: SVGSVGElement) {
-    this.renderer.init(svg);
-  }
+  init() {}
 
   setData(data: TData[]) {
     this.rawData = data;
@@ -79,22 +72,25 @@ export abstract class BaseDataLayer<TData, TRender>
   }
 
   draw(dt: number): boolean {
+    let frame: TRender[];
+
     if (this.anim.active) {
       const rawT = this.anim.update(dt, this.currentPolicy.duration);
       const t = this.currentPolicy.ease(rawT);
-      const frame = this.currentPolicy.interpolate(this.from, this.data, t);
-      this.rendererDraw(frame, this.hovered);
+
+      frame = this.currentPolicy.interpolate(this.from, this.data, t);
+
       if (rawT > 0) this.first = false;
-      return true;
+    } else {
+      frame = this.data;
     }
 
-    this.rendererDraw(this.data, this.hovered);
-    return false;
+    this.primitives = this.buildPrimitives(frame);
+
+    return this.anim.active;
   }
 
-  destroy(): void {
-    this.renderer.destroy();
-  }
+  destroy(): void {}
 
   pick(x: number, y: number): boolean {
     const i = this.picker(this.data, x, y);
@@ -107,6 +103,10 @@ export abstract class BaseDataLayer<TData, TRender>
 
   clearHover() {
     this.hovered = null;
+  }
+
+  getPrimitives(): Primitive[] {
+    return this.primitives;
   }
 
   protected getBaselineY(): number {

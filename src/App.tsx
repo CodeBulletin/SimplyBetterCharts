@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { LineChart, BarChart, CompositeChart } from "../lib/main";
+import { LineChart, CompositeChart, BarChart } from "../lib/main";
 
 /* --------------------------------
    HELPERS

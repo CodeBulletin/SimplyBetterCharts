@@ -1,5 +1,6 @@
 import type { AnyChartLayer } from "../Layer/Interface/AnyChartLayer";
 import type { ScaledLayer } from "../Layer/Interface/ScaledLayer";
+import type { Primitive } from "../Primitives/Primitives";
 import { ScaleManager } from "../Scales/ScaleManager";
 import type { DomainValue, ScaleId } from "../Types/types";
 
@@ -13,12 +14,11 @@ const DEFAULT_MARGIN = {
 export class ChartEngine {
   private layers: (AnyChartLayer & Partial<ScaledLayer>)[] = [];
   private dirty = true; // 🔑 start dirty
-  private readonly container: SVGSVGElement;
   readonly margin = DEFAULT_MARGIN;
   readonly scales: ScaleManager;
+  private primitives: Primitive[] = [];
 
-  constructor(container: SVGSVGElement, width: number, height: number) {
-    this.container = container;
+  constructor(width: number, height: number) {
     this.scales = new ScaleManager(this.margin);
     this.scales.setSize(width, height);
   }
@@ -34,7 +34,6 @@ export class ChartEngine {
   addLayer(layer: AnyChartLayer & Partial<ScaledLayer>) {
     layer.setScales?.(this.scales);
     this.layers.push(layer);
-    layer.init(this.container);
 
     this.resolveDomains();
 
@@ -57,20 +56,26 @@ export class ChartEngine {
     this.dirty = true;
   }
 
-  draw(dt: number): boolean {
-    if (!this.dirty) return false;
-
+  draw(dt: number): { primitives: Primitive[]; needsMore: boolean } {
     let stillAnimating = false;
+    const scene: Primitive[] = [];
 
     for (const layer of this.layers) {
-      // layer.draw returns whether it is still animating
       stillAnimating = layer.draw(dt) || stillAnimating;
+
+      const p = layer.getPrimitives();
+      if (p && p.length) {
+        scene.push(...p);
+      }
     }
 
-    // keep drawing if animation is active
-    this.dirty = stillAnimating;
+    // 🔑 Painter’s order: layers already added in z-order
+    this.primitives = scene;
 
-    return this.dirty;
+    return {
+      primitives: scene,
+      needsMore: stillAnimating,
+    };
   }
 
   onPointerMove(x: number, y: number) {

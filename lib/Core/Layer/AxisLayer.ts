@@ -1,24 +1,32 @@
 import type { AnyChartLayer } from "./Interface/AnyChartLayer";
 import type { ScaledLayer } from "./Interface/ScaledLayer";
 import type { ScaleManager } from "../Scales/ScaleManager";
-import type { AxisRenderer, AxisTick } from "../Renderer/Interface/Renderers";
 import type { CategoricalDomain, ContinuousDomain } from "../Types/types";
+import type { Primitive } from "../Primitives/Primitives";
+
+type AxisTick = {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  lx: number;
+  ly: number;
+  label: string;
+};
 
 export class AxisLayer implements AnyChartLayer, ScaledLayer {
   readonly id: string;
   private scales!: ScaleManager;
-  private renderer: AxisRenderer;
   private orientation: "bottom" | "left";
+  private ticks: AxisTick[] = [];
+  private primitives: Primitive[] = [];
 
-  constructor(orientation: "bottom" | "left", renderer: AxisRenderer) {
+  constructor(orientation: "bottom" | "left") {
     this.orientation = orientation;
-    this.renderer = renderer;
     this.id = `axis:${orientation}`;
   }
 
-  init(svg: SVGSVGElement): void {
-    this.renderer.init(svg);
-  }
+  init(): void {}
 
   setScales(scales: ScaleManager): void {
     this.scales = scales;
@@ -34,17 +42,7 @@ export class AxisLayer implements AnyChartLayer, ScaledLayer {
 
     const ticks = this.computeTicks(left, right, top, bottom);
 
-    if (this.orientation === "bottom") {
-      this.renderer.render({
-        axisLine: { x1: left, y1: bottom, x2: right, y2: bottom },
-        ticks,
-      });
-    } else {
-      this.renderer.render({
-        axisLine: { x1: left, y1: top, x2: left, y2: bottom },
-        ticks,
-      });
-    }
+    this.ticks = ticks;
   }
 
   private computeTicks(
@@ -139,8 +137,102 @@ export class AxisLayer implements AnyChartLayer, ScaledLayer {
     return ticks;
   }
 
+  private buildPrimitives(): Primitive[] {
+    if (!this.scales) return [];
+
+    const { width, height, margins } = this.scales;
+
+    const left = margins.left;
+    const right = width - margins.right;
+    const top = margins.top;
+    const bottom = height - margins.bottom;
+
+    const primitives: Primitive[] = [];
+
+    const axisId = this.id;
+
+    /* -----------------------------
+       Axis main line
+    ------------------------------ */
+    if (this.orientation === "bottom") {
+      primitives.push({
+        type: "line",
+        id: `${axisId}:line`,
+        x1: left,
+        y1: bottom,
+        x2: right,
+        y2: bottom,
+        style: {
+          stroke: "#444",
+          strokeWidth: 1,
+        },
+        pickable: false,
+        zIndex: 0,
+      });
+    } else {
+      primitives.push({
+        type: "line",
+        id: `${axisId}:line`,
+        x1: left,
+        y1: top,
+        x2: left,
+        y2: bottom,
+        style: {
+          stroke: "#444",
+          strokeWidth: 1,
+        },
+        pickable: false,
+        zIndex: 0,
+      });
+    }
+
+    /* -----------------------------
+       Ticks + labels
+    ------------------------------ */
+    this.ticks.forEach((t, i) => {
+      // Tick line
+      primitives.push({
+        type: "line",
+        id: `${axisId}:tick:${i}`,
+        x1: t.x1,
+        y1: t.y1,
+        x2: t.x2,
+        y2: t.y2,
+        style: {
+          stroke: "#444",
+          strokeWidth: 1,
+        },
+        pickable: false,
+        zIndex: 0,
+      });
+
+      // Tick label
+      primitives.push({
+        type: "text",
+        id: `${axisId}:label:${i}`,
+        x: t.lx,
+        y: t.ly,
+        text: t.label,
+        anchor: this.orientation === "bottom" ? "middle" : "end",
+        style: {
+          fill: "#444",
+          fontSize: 11,
+        },
+        pickable: false,
+        zIndex: 0,
+      });
+    });
+
+    return primitives;
+  }
+
   draw(): boolean {
-    return false;
+    this.primitives = this.buildPrimitives();
+    return false; // axes are static (for now)
+  }
+
+  getPrimitives(): Primitive[] {
+    return this.primitives;
   }
 
   pick(): boolean {
@@ -149,7 +241,5 @@ export class AxisLayer implements AnyChartLayer, ScaledLayer {
 
   clearHover(): void {}
 
-  destroy(): void {
-    this.renderer.destroy();
-  }
+  destroy(): void {}
 }

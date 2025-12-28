@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 import { ChartEngine } from "../Core/Engine/ChartEngine";
-import { ChartRoot } from "../Core/ChartRoot";
+import { ChartRoot } from "../DOM/ChartRoot";
 
 export function useChartEngine(
   svgRef: React.RefObject<SVGSVGElement | null>,
@@ -13,8 +13,8 @@ export function useChartEngine(
   useLayoutEffect(() => {
     if (!svgRef.current) return;
 
-    const engine = new ChartEngine(svgRef.current, width, height);
-    const root = new ChartRoot(engine);
+    const engine = new ChartEngine(width, height);
+    const root = new ChartRoot(engine, svgRef.current);
 
     engineRef.current = engine;
     rootRef.current = root;

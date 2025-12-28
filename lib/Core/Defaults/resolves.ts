@@ -6,25 +6,15 @@ import {
 } from "../Animation/AnimationPolicies";
 import type { AnimationPolicy } from "../Animation/AnimationPolicy";
 import { EASING_MAP } from "../Animation/helper";
-import {
-  createAxisRenderer,
-  createBarRenderer,
-  createLineRenderer,
-} from "../Factories/Factories";
-import type {
-  AxisRenderer,
-  BarRenderer,
-  LineRenderer,
-} from "../Renderer/Interface/Renderers";
 import type { AnimationOptions, LineStyle } from "../Types/lib";
 import type {
   Point,
   Rect,
-  RendererType,
+  // RendererType,
   ResolvedAnimationOptions,
 } from "../Types/types";
 import {
-  DEFAULT_2D_RENDERER,
+  // DEFAULT_2D_RENDERER,
   DEFAULT_ANIMATION,
   DEFAULT_LINE_STYLE,
 } from "./defaults";
@@ -84,25 +74,4 @@ export function resolveBarAnimationPolicies(options?: AnimationOptions): {
     initial: new BarGrowPolicy(),
     update: new NoAnimationPolicy<Rect>(),
   };
-}
-
-export function resolveLineRenderer(
-  rendererTypeOptional?: RendererType,
-): LineRenderer {
-  const rendererType = rendererTypeOptional ?? DEFAULT_2D_RENDERER;
-  return createLineRenderer(rendererType);
-}
-
-export function resolveBarRenderer(
-  rendererTypeOptional?: RendererType,
-): BarRenderer {
-  const rendererType = rendererTypeOptional ?? DEFAULT_2D_RENDERER;
-  return createBarRenderer(rendererType);
-}
-
-export function resolveAxisRenderer(
-  rendererTypeOptional?: RendererType,
-): AxisRenderer {
-  const rendererType = rendererTypeOptional ?? DEFAULT_2D_RENDERER;
-  return createAxisRenderer(rendererType);
 }

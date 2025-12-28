@@ -1,4 +1,4 @@
-import type { Scale } from "./Scale";
+import type { Scale, Tick } from "./type";
 
 export class LinearScale implements Scale<[number, number], number> {
   private d0 = 0;
@@ -6,6 +6,7 @@ export class LinearScale implements Scale<[number, number], number> {
   private r0 = 0;
   private r1 = 1;
   private clampEnabled = false;
+  private hasDomain = false;
 
   setDomain(domain: [number, number]) {
     const min = domain[0];
@@ -18,6 +19,8 @@ export class LinearScale implements Scale<[number, number], number> {
 
     this.d0 = min;
     this.d1 = max;
+
+    this.hasDomain = true;
   }
 
   setRange(min: number, max: number) {
@@ -42,6 +45,23 @@ export class LinearScale implements Scale<[number, number], number> {
   invert(px: number): number {
     const t = (px - this.r0) / (this.r1 - this.r0);
     return this.d0 + t * (this.d1 - this.d0);
+  }
+
+  ticks(count = 5) {
+    if (!this.hasDomain) return [];
+    const ticks: Tick<number>[] = [];
+    const step = (this.d1 - this.d0) / (count - 1);
+
+    for (let i = 0; i < count; i++) {
+      const value = this.d0 + step * i;
+      ticks.push({
+        value,
+        position: this.map(value),
+        label: Number.isInteger(value) ? String(value) : value.toFixed(2),
+      });
+    }
+
+    return ticks;
   }
 
   get domain(): [number, number] {

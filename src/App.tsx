@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { LineChart, CompositeChart, BarChart } from "../lib/main";
+import "./examplePlugin/Threshold";
 
 /* --------------------------------
    HELPERS
@@ -48,6 +49,30 @@ export default function App() {
   --------------------------------- */
   const compositeLayers = useMemo(() => {
     const layers: any[] = [];
+
+    layers.push({
+      id: "x",
+      type: "axis",
+      orientation: "bottom",
+      scaleId: "x:primary",
+      zIndex: 0,
+    });
+    layers.push({
+      id: "y",
+      type: "axis",
+      orientation: "left",
+      scaleId: "y:primary",
+      zIndex: 0,
+    });
+
+    layers.push({
+      id: "limit",
+      type: "threshold",
+      scaleId: "y:primary",
+      value: -10,
+      color: "crimson",
+      zIndex: 200,
+    });
 
     // Bars are always present
     layers.push({
@@ -102,8 +127,8 @@ export default function App() {
       {/* Independent charts still work */}
       <section>
         <h3>Independent Charts</h3>
-        <LineChart data={lineA} />
-        <BarChart data={bars} />
+        <LineChart data={lineA} width={500} height={500} />
+        <BarChart data={bars} width={500} height={500} />
       </section>
     </div>
   );

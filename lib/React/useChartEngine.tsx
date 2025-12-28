@@ -19,10 +19,10 @@ export function useChartEngine(
     engineRef.current = engine;
     rootRef.current = root;
 
-    if (root.isStoped()) root.start();
+    root.start();
 
     return () => {
-      if (!root.isStoped()) root.stop();
+      root.stop();
       engineRef.current = null;
       rootRef.current = null;
     };

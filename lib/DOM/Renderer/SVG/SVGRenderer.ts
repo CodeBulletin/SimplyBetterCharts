@@ -69,8 +69,9 @@ export class SVGRenderer implements Renderer {
         return document.createElementNS(SVG_NS, "line");
       case "text":
         return document.createElementNS(SVG_NS, "text");
-      default:
-        throw new Error(`Unsupported primitive type: ${p.type as never}`);
+      default: {
+        throw new Error("Unsupported primitive", p);
+      }
     }
   }
 

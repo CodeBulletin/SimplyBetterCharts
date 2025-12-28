@@ -1,39 +1,52 @@
-import type { LineData, Point, Domain } from "../Types/types";
-import { processLineData } from "../DataProcessor/Processor";
+import type { LineData, Point, Domain, ScaleId } from "../Types/types";
 import { linePicker } from "../Picker/Picker";
 import type { AnimationPolicy } from "../Animation/AnimationPolicy";
 import type { AnimationStage } from "../Types/types";
 import type { ScaleManager } from "../Scales/ScaleManager";
 
 import { BaseDataLayer } from "./BaseDataLayer";
-import { registerLayer } from "./LayerRegistry";
+import { registerLayerPlugin } from "./LayerRegistry";
 import { resolveLineAnimationPolicies } from "../Defaults/resolves";
 import type { Primitive } from "../Primitives/Primitives";
+import type { LineLayerDescriptor } from "./LayerDescriptor";
 
 export class LineLayer extends BaseDataLayer<LineData, Point> {
-  public readonly id = "line";
+  public readonly id;
+  protected xScaleId: ScaleId = "x:primary";
+  protected yScaleId: ScaleId = "y:primary";
 
-  constructor(policies: Record<AnimationStage, AnimationPolicy<Point>>) {
+  constructor(
+    id: string,
+    policies: Record<AnimationStage, AnimationPolicy<Point>>,
+  ) {
     super(policies);
+    this.id = id;
     this.picker = linePicker;
   }
 
   /** convert raw data → render data */
   protected process(): Point[] {
-    return processLineData(this.rawData, this.scales);
+    const x = this.getXContinuous();
+    const y = this.getY();
+
+    return this.rawData.map((d) => ({
+      x: x.map(d.x as number),
+      y: y.map(d.y),
+    }));
   }
 
   protected buildPrimitives(points: Point[]): Primitive[] {
     if (points.length === 0) return [];
 
     const path = "M " + points.map((p) => `${p.x} ${p.y}`).join(" L ");
-
     const hovered = this.hovered !== null ? points[this.hovered] : null;
+
+    const baseId = this.id; // 🔑 layer-scoped
 
     const primitives: Primitive[] = [
       {
         type: "path",
-        id: "line:path",
+        id: `${baseId}:path`,
         d: path,
         style: {
           stroke: hovered ? "orange" : "steelblue",
@@ -45,11 +58,10 @@ export class LineLayer extends BaseDataLayer<LineData, Point> {
       },
     ];
 
-    // Optional hover marker
     if (hovered) {
       primitives.push({
         type: "circle",
-        id: "line:hover",
+        id: `${baseId}:hover`,
         cx: hovered.x,
         cy: hovered.y,
         r: 5,
@@ -66,34 +78,41 @@ export class LineLayer extends BaseDataLayer<LineData, Point> {
     return primitives;
   }
 
-  computeDomain(): Domain | undefined {
-    if (this.rawData.length === 0) return;
-
-    const firstX = this.rawData[0].x;
-
-    if (typeof firstX === "string") {
-      const ys = this.rawData.map((d) => d.y);
-      return {
-        x: this.rawData.map((d) => d.x),
-        y: [Math.min(...ys), Math.max(...ys)],
-      };
-    }
-
-    const xs = this.rawData.map((d) => d.x as number);
+  computeDomain(): Domain {
+    const xs = this.rawData.map((d) => d.x);
     const ys = this.rawData.map((d) => d.y);
 
     return {
-      x: [Math.min(...xs), Math.max(...xs)],
-      y: [Math.min(...ys), Math.max(...ys)],
+      [this.xScaleId]:
+        typeof xs[0] === "number"
+          ? [Math.min(...(xs as number[])), Math.max(...(xs as number[]))]
+          : xs,
+      [this.yScaleId]: [Math.min(...ys), Math.max(...ys)],
     };
   }
 
   setScales(scales: ScaleManager): void {
     super.setScales(scales);
   }
+
+  getBaselineY(): number {
+    return this.getY().map(0);
+  }
 }
 
-registerLayer(
-  "line",
-  (options) => new LineLayer(resolveLineAnimationPolicies(options?.animation)),
-);
+registerLayerPlugin<LineLayerDescriptor>({
+  type: "line",
+
+  create(desc, ctx) {
+    const layer = new LineLayer(
+      desc.id,
+      resolveLineAnimationPolicies(desc.options?.animation),
+    );
+    layer.setScales(ctx.scales);
+    return layer;
+  },
+
+  setData(layer, desc) {
+    (layer as LineLayer).setData(desc.data);
+  },
+});

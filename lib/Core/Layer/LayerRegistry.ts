@@ -1,23 +1,20 @@
-import type { BarChartOptions, LineChartOptions } from "../Types/lib";
-import type { AnyChartLayer } from "./Interface/AnyChartLayer";
+import type { LayerPlugin } from "./LayerPlugin";
 
-type LayerBuilder = (
-  options: LineChartOptions | BarChartOptions | undefined,
-) => AnyChartLayer;
+const plugins = new Map<string, LayerPlugin<any>>();
 
-const registry = new Map<string, LayerBuilder>();
-
-export function registerLayer(type: string, builder: LayerBuilder) {
-  registry.set(type, builder);
+export function registerLayerPlugin<D extends { id: string; type: string }>(
+  plugin: LayerPlugin<D>,
+) {
+  if (plugins.has(plugin.type)) {
+    throw new Error(`Layer plugin "${plugin.type}" already registered`);
+  }
+  plugins.set(plugin.type, plugin);
 }
 
-export function createLayer(
-  type: string,
-  options: LineChartOptions | BarChartOptions | undefined,
-) {
-  const builder = registry.get(type);
-  if (!builder) {
-    throw new Error(`Unknown layer type: ${type}`);
+export function getLayerPlugin(type: string): LayerPlugin<any> {
+  const plugin = plugins.get(type);
+  if (!plugin) {
+    throw new Error(`Unknown layer type: "${type}"`);
   }
-  return builder(options);
+  return plugin;
 }

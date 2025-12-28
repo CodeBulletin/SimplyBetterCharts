@@ -1,5 +1,5 @@
 import type { ScaleId } from "../Types/types";
-import type { Scale } from "./Scale";
+import type { Scale } from "./type";
 
 export class ScaleRegistry {
   private scales = new Map<unknown, unknown>();

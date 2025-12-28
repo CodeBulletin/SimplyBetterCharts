@@ -1,8 +1,10 @@
 import type { AnyChartLayer } from "./Interface/AnyChartLayer";
 import type { ScaledLayer } from "./Interface/ScaledLayer";
 import type { ScaleManager } from "../Scales/ScaleManager";
-import type { CategoricalDomain, ContinuousDomain } from "../Types/types";
+import type { ScaleId } from "../Types/types";
 import type { Primitive } from "../Primitives/Primitives";
+import { registerLayerPlugin } from "./LayerRegistry";
+import type { AxisLayerDescriptor } from "./LayerDescriptor";
 
 type AxisTick = {
   x1: number;
@@ -17,13 +19,19 @@ type AxisTick = {
 export class AxisLayer implements AnyChartLayer, ScaledLayer {
   readonly id: string;
   private scales!: ScaleManager;
-  private orientation: "bottom" | "left";
+  private orientation: "left" | "right" | "bottom" | "top";
   private ticks: AxisTick[] = [];
   private primitives: Primitive[] = [];
+  private scaleId: ScaleId;
 
-  constructor(orientation: "bottom" | "left") {
+  constructor(
+    orientation: "left" | "right" | "bottom" | "top",
+    scaleId: ScaleId,
+    id: string,
+  ) {
     this.orientation = orientation;
-    this.id = `axis:${orientation}`;
+    this.scaleId = scaleId;
+    this.id = `axis:${id}:${scaleId}:${orientation}`;
   }
 
   init(): void {}
@@ -43,6 +51,8 @@ export class AxisLayer implements AnyChartLayer, ScaledLayer {
     const ticks = this.computeTicks(left, right, top, bottom);
 
     this.ticks = ticks;
+
+    this.primitives = this.buildPrimitives();
   }
 
   private computeTicks(
@@ -51,90 +61,60 @@ export class AxisLayer implements AnyChartLayer, ScaledLayer {
     top: number,
     bottom: number,
   ): AxisTick[] {
-    const scale =
-      this.orientation === "bottom"
-        ? this.scales.get("x")
-        : this.scales.get("y");
+    if (!this.scales.has(this.scaleId)) return [];
+    const scale = this.scales.get(this.scaleId);
 
-    const ticks: AxisTick[] = [];
+    if (!scale.ticks) return [];
 
-    const TICK_SIZE = 6;
-    const LABEL_OFFSET = 14;
-    const LINEAR_TICK_COUNT = 25;
+    const ticks = scale.ticks(5);
 
-    /* -----------------------------
-       BAND SCALE (categorical)
-    ------------------------------ */
-    if ("domainValues" in scale) {
-      for (const value of scale.domainValues as CategoricalDomain) {
-        const p = scale.map(value);
-
-        if (this.orientation === "bottom") {
-          ticks.push({
-            x1: p,
+    return ticks.map((t) => {
+      switch (this.orientation) {
+        case "bottom":
+          return {
+            x1: t.position,
             y1: bottom,
-            x2: p,
-            y2: bottom - TICK_SIZE,
-            lx: p,
-            ly: bottom + LABEL_OFFSET,
-            label: String(value),
-          });
-        } else {
-          ticks.push({
+            x2: t.position,
+            y2: bottom - 6,
+            lx: t.position,
+            ly: bottom + 14,
+            label: t.label,
+          };
+
+        case "top":
+          return {
+            x1: t.position,
+            y1: top,
+            x2: t.position,
+            y2: top + 6,
+            lx: t.position,
+            ly: top - 8,
+            label: t.label,
+          };
+
+        case "left":
+          return {
             x1: left,
-            y1: p,
-            x2: left + TICK_SIZE,
-            y2: p,
-            lx: left - LABEL_OFFSET,
-            ly: p + 4,
-            label: String(value),
-          });
-        }
+            y1: t.position,
+            x2: left + 6,
+            y2: t.position,
+            lx: left - 10,
+            ly: t.position + 4,
+            label: t.label,
+          };
+
+        case "right":
+          return {
+            x1: right,
+            y1: t.position,
+            x2: right - 6,
+            y2: t.position,
+            lx: right + 10,
+            ly: t.position + 4,
+            label: t.label,
+          };
       }
-
-      return ticks;
-    }
-
-    /* -----------------------------
-       LINEAR SCALE (continuous)
-    ------------------------------ */
-    if ("domain" in scale) {
-      const [d0, d1] = scale.domain as ContinuousDomain;
-      const step = (d1 - d0) / (LINEAR_TICK_COUNT - 1);
-
-      for (let i = 0; i < LINEAR_TICK_COUNT; i++) {
-        const value = d0 + i * step;
-        const p = scale.map(value);
-
-        const label = Number.isInteger(value)
-          ? String(value)
-          : value.toFixed(2);
-
-        if (this.orientation === "bottom") {
-          ticks.push({
-            x1: p,
-            y1: bottom,
-            x2: p,
-            y2: bottom - TICK_SIZE,
-            lx: p,
-            ly: bottom + LABEL_OFFSET,
-            label,
-          });
-        } else {
-          ticks.push({
-            x1: left,
-            y1: p,
-            x2: left + TICK_SIZE,
-            y2: p,
-            lx: left - LABEL_OFFSET,
-            ly: p + 4,
-            label,
-          });
-        }
-      }
-    }
-
-    return ticks;
+    });
   }
 
   private buildPrimitives(): Primitive[] {
@@ -154,36 +134,62 @@ export class AxisLayer implements AnyChartLayer, ScaledLayer {
     /* -----------------------------
        Axis main line
     ------------------------------ */
-    if (this.orientation === "bottom") {
-      primitives.push({
-        type: "line",
-        id: `${axisId}:line`,
-        x1: left,
-        y1: bottom,
-        x2: right,
-        y2: bottom,
-        style: {
-          stroke: "#444",
-          strokeWidth: 1,
-        },
-        pickable: false,
-        zIndex: 0,
-      });
-    } else {
-      primitives.push({
-        type: "line",
-        id: `${axisId}:line`,
-        x1: left,
-        y1: top,
-        x2: left,
-        y2: bottom,
-        style: {
-          stroke: "#444",
-          strokeWidth: 1,
-        },
-        pickable: false,
-        zIndex: 0,
-      });
+    switch (this.orientation) {
+      case "bottom":
+        primitives.push({
+          type: "line",
+          id: `${axisId}:line`,
+          x1: left,
+          y1: bottom,
+          x2: right,
+          y2: bottom,
+          style: { stroke: "#444", strokeWidth: 1 },
+          pickable: false,
+          zIndex: 0,
+        });
+        break;
+
+      case "top":
+        primitives.push({
+          type: "line",
+          id: `${axisId}:line`,
+          x1: left,
+          y1: top,
+          x2: right,
+          y2: top,
+          style: { stroke: "#444", strokeWidth: 1 },
+          pickable: false,
+          zIndex: 0,
+        });
+        break;
+
+      case "left":
+        primitives.push({
+          type: "line",
+          id: `${axisId}:line`,
+          x1: left,
+          y1: top,
+          x2: left,
+          y2: bottom,
+          style: { stroke: "#444", strokeWidth: 1 },
+          pickable: false,
+          zIndex: 0,
+        });
+        break;
+
+      case "right":
+        primitives.push({
+          type: "line",
+          id: `${axisId}:line`,
+          x1: right,
+          y1: top,
+          x2: right,
+          y2: bottom,
+          style: { stroke: "#444", strokeWidth: 1 },
+          pickable: false,
+          zIndex: 0,
+        });
+        break;
     }
 
     /* -----------------------------
@@ -213,7 +219,13 @@ export class AxisLayer implements AnyChartLayer, ScaledLayer {
         x: t.lx,
         y: t.ly,
         text: t.label,
-        anchor: this.orientation === "bottom" ? "middle" : "end",
+        anchor:
+          this.orientation === "bottom" || this.orientation === "top"
+            ? "middle"
+            : this.orientation === "left"
+              ? "end"
+              : "start",
+
         style: {
           fill: "#444",
           fontSize: 11,
@@ -239,7 +251,21 @@ export class AxisLayer implements AnyChartLayer, ScaledLayer {
     return false;
   }
 
+  getScaleIds(): ScaleId[] {
+    return [this.scaleId];
+  }
+
   clearHover(): void {}
 
   destroy(): void {}
 }
+
+registerLayerPlugin<AxisLayerDescriptor>({
+  type: "axis",
+
+  create(desc, ctx) {
+    const layer = new AxisLayer(desc.orientation, desc.scaleId, desc.id);
+    layer.setScales(ctx.scales);
+    return layer;
+  },
+});

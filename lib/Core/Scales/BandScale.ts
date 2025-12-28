@@ -1,4 +1,4 @@
-import type { Scale } from "./Scale";
+import type { Scale, Tick } from "./type";
 
 export class BandScale<T = string | number> implements Scale<T[], T> {
   private domain: T[] = [];
@@ -40,6 +40,15 @@ export class BandScale<T = string | number> implements Scale<T[], T> {
 
   get bandwidth(): number {
     return this.step * (1 - this.paddingInner);
+  }
+
+  // BandScale.ts
+  ticks(): Tick<T>[] {
+    return this.domain.map((v) => ({
+      value: v,
+      position: this.map(v),
+      label: String(v),
+    }));
   }
 
   map(value: T): number {

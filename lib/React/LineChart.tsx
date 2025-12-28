@@ -1,49 +1,49 @@
 import { useLayoutEffect, useRef } from "react";
-import { LineLayer } from "../Core/Layer/LineLayer";
 import type { LineData } from "../Core/Types/types";
 import type { LineChartOptions } from "../Core/Types/lib";
 import { useChartEngine } from "./useChartEngine";
-import { createLayer } from "../Core/Layer/LayerRegistry";
-import { AxisLayer } from "../Core/Layer/AxisLayer";
 
 type Props = {
   data: LineData[];
+  width: number;
+  height: number;
   chartOptions?: LineChartOptions;
 };
 
-export function LineChart({ data, chartOptions }: Props) {
+export function LineChart({ data, width, height, chartOptions }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
-  const layerRef = useRef<LineLayer | null>(null);
 
-  const { rootRef, engineRef } = useChartEngine(
-    svgRef,
-    chartOptions?.width ?? 500,
-    chartOptions?.height ?? 500,
-  );
+  const { rootRef, engineRef } = useChartEngine(svgRef, width, height);
 
   useLayoutEffect(() => {
-    if (!svgRef.current || !engineRef.current || !rootRef.current) return;
+    if (!engineRef.current || !rootRef.current) return;
 
-    const engine = engineRef.current;
+    engineRef.current.setLayers([
+      {
+        id: "x",
+        type: "axis",
+        orientation: "bottom",
+        scaleId: "x:primary",
+        zIndex: 0,
+      },
+      {
+        id: "y",
+        type: "axis",
+        orientation: "left",
+        scaleId: "y:primary",
+        zIndex: 0,
+      },
+      {
+        id: "line",
+        type: "line",
+        data,
+        zIndex: 10,
+        options: chartOptions,
+      },
+    ]);
 
-    const layer = createLayer("line", chartOptions) as LineLayer;
-
-    engine.addLayer(new AxisLayer("bottom"));
-    engine.addLayer(new AxisLayer("left"));
-    engine.addLayer(layer);
-
-    layerRef.current = layer;
-
-    return () => {
-      layerRef.current = null;
-    };
-  }, []); // run once
-
-  /* ---------- data updates ---------- */
-  useLayoutEffect(() => {
-    layerRef.current?.setData(data);
-    rootRef.current?.reflow();
-  }, [data]);
+    // rootRef.current.reflow();
+  }, [data, chartOptions]);
 
   /* ---------- pointer handling ---------- */
   function onPointerMove(e: React.MouseEvent) {
@@ -54,8 +54,8 @@ export function LineChart({ data, chartOptions }: Props) {
   return (
     <svg
       ref={svgRef}
-      width={chartOptions?.width ?? 500}
-      height={chartOptions?.height ?? 500}
+      width={width}
+      height={height}
       onPointerMove={onPointerMove}
       onPointerLeave={() => rootRef.current?.clearHover()}
       onPointerCancel={() => rootRef.current?.clearHover()}

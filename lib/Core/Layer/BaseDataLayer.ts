@@ -1,5 +1,5 @@
 import type { AnyChartLayer } from "./Interface/AnyChartLayer";
-import type { AnimationStage, Picker } from "../Types/types";
+import type { AnimationStage, Picker, ScaleId } from "../Types/types";
 import type { AnimationPolicy } from "../Animation/AnimationPolicy";
 import { AnimationController } from "../Animation/AnimationController";
 import type { ScaledLayer } from "./Interface/ScaledLayer";
@@ -7,6 +7,7 @@ import type { ScaleManager } from "../Scales/ScaleManager";
 import type { DataLayer } from "./Interface/DataLayer";
 import type { Primitive } from "../Primitives/Primitives";
 import type { ChartLayer } from "./Interface/ChartLayer";
+import type { CategoricalScale, ContinuousScale } from "../Scales/type";
 
 export abstract class BaseDataLayer<TData, TRender>
   implements AnyChartLayer, ScaledLayer, DataLayer<TData>, ChartLayer<TRender>
@@ -25,6 +26,8 @@ export abstract class BaseDataLayer<TData, TRender>
   protected picker!: Picker<TRender>;
 
   public abstract readonly id: string;
+  protected abstract xScaleId: ScaleId;
+  protected abstract yScaleId: ScaleId;
 
   protected abstract buildPrimitives(data: TRender[]): Primitive[];
   protected abstract process(): TRender[];
@@ -42,6 +45,18 @@ export abstract class BaseDataLayer<TData, TRender>
 
   setScales(scales: ScaleManager) {
     this.scales = scales;
+  }
+
+  protected getXContinuous(): ContinuousScale {
+    return this.scales.get(this.xScaleId) as ContinuousScale;
+  }
+
+  protected getXCategorical<T = string | number>(): CategoricalScale<T> {
+    return this.scales.get(this.xScaleId) as CategoricalScale<T>;
+  }
+
+  protected getY(): ContinuousScale {
+    return this.scales.get(this.yScaleId) as ContinuousScale;
   }
 
   setPicker(picker: Picker<TRender>): void {
@@ -111,5 +126,9 @@ export abstract class BaseDataLayer<TData, TRender>
 
   protected getBaselineY(): number {
     return this.scales.height;
+  }
+
+  getScaleIds(): ScaleId[] {
+    return [this.xScaleId, this.yScaleId];
   }
 }

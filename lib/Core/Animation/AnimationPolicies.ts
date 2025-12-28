@@ -103,3 +103,42 @@ export class NoAnimationPolicy<T> implements AnimationPolicy<T> {
     return to;
   }
 }
+
+export class BarUpdatePolicy implements AnimationPolicy<Rect> {
+  readonly duration = 0.35;
+
+  ease(t: number) {
+    return easeOutCubic(t);
+  }
+
+  start(next: Rect[], ctx: AnimationContext<Rect>): Rect[] {
+    const prev = (ctx.previous as Rect[]) ?? [];
+
+    return next.map((r, i) => {
+      const p = prev[i];
+
+      // Existing bar → animate from previous rect
+      if (p) return p;
+
+      // New bar → grow from baseline
+      return {
+        ...r,
+        y: ctx.height,
+        h: 0,
+      };
+    });
+  }
+
+  interpolate(from: Rect[], to: Rect[], t: number): Rect[] {
+    return to.map((r, i) => {
+      const f = from[i] ?? r;
+
+      return {
+        x: lerp(f.x, r.x, t),
+        y: lerp(f.y, r.y, t),
+        w: lerp(f.w, r.w, t),
+        h: lerp(f.h, r.h, t),
+      };
+    });
+  }
+}

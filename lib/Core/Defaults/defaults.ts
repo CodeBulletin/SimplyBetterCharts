@@ -1,4 +1,4 @@
-import type { AxisOptions, BarStyle, LineStyle } from "../Types/lib";
+import type { AxisOptions } from "../Types/lib";
 import type { ResolvedAnimationOptions } from "../Types/types";
 
 export const DEFAULT_MARGIN = {
@@ -6,16 +6,6 @@ export const DEFAULT_MARGIN = {
   right: 20,
   bottom: 30,
   left: 40,
-};
-
-export const DEFAULT_LINE_STYLE: Required<LineStyle> = {
-  stroke: "steelblue",
-  strokeWidth: 2,
-};
-
-export const DEFAULT_BAR_STYLE: Required<BarStyle> = {
-  fill: "steelblue",
-  radius: 0,
 };
 
 export const DEFAULT_ANIMATION: ResolvedAnimationOptions = {

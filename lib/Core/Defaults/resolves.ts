@@ -1,12 +1,13 @@
 import {
   BarGrowPolicy,
+  BarUpdatePolicy,
   LineBaselinePolicy,
   LineUpdatePolicy,
   NoAnimationPolicy,
 } from "../Animation/AnimationPolicies";
 import type { AnimationPolicy } from "../Animation/AnimationPolicy";
 import { EASING_MAP } from "../Animation/helper";
-import type { AnimationOptions, LineStyle } from "../Types/lib";
+import type { AnimationOptions } from "../Types/lib";
 import type {
   Point,
   Rect,
@@ -16,15 +17,7 @@ import type {
 import {
   // DEFAULT_2D_RENDERER,
   DEFAULT_ANIMATION,
-  DEFAULT_LINE_STYLE,
 } from "./defaults";
-
-export function resolveLineStyle(style?: LineStyle): Required<LineStyle> {
-  return {
-    ...DEFAULT_LINE_STYLE,
-    ...style,
-  };
-}
 
 export function resolveAnimationOptions(
   options?: AnimationOptions,
@@ -72,6 +65,6 @@ export function resolveBarAnimationPolicies(options?: AnimationOptions): {
   // Bars usually only grow on enter
   return {
     initial: new BarGrowPolicy(),
-    update: new NoAnimationPolicy<Rect>(),
+    update: new BarUpdatePolicy(),
   };
 }

@@ -4,22 +4,23 @@ import { SVGRenderer } from "./Renderer/SVG/SVGRenderer";
 export class ChartRoot {
   private rafId: number | null = null;
   private lastTime = 0;
-  private stopped = false;
+  private running = false;
 
   private readonly engine;
   private readonly renderer;
 
   constructor(engine: ChartEngine, svg: SVGSVGElement) {
     this.engine = engine;
+    engine.onInvalidate = () => this.invalidate();
     this.renderer = new SVGRenderer(svg); // 🔑 Renderer owns container
   }
 
   isStoped() {
-    return this.stopped;
+    return this.running === false;
   }
 
   private loop = (time: number) => {
-    if (this.stopped) return;
+    if (!this.running) return;
 
     if (!this.lastTime) this.lastTime = time;
     const dt = (time - this.lastTime) / 1000;
@@ -38,14 +39,14 @@ export class ChartRoot {
   };
 
   start() {
-    if (this.stopped) return;
+    this.running = true;
     if (this.rafId !== null) return;
 
     this.rafId = requestAnimationFrame(this.loop);
   }
 
   stop() {
-    this.stopped = true;
+    this.running = false;
 
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId);
@@ -64,7 +65,6 @@ export class ChartRoot {
   }
 
   invalidate() {
-    if (this.stopped) return;
     if (this.rafId === null) {
       this.start();
     }

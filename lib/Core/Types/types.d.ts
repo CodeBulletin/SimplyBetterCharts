@@ -24,8 +24,8 @@ export type LineData = {
 type AnimationStage = "initial" | "update";
 
 export type ScaleId =
-  | "x"
-  | "y"
+  | "x:primary"
+  | "y:primary"
   | "x:secondary"
   | "y:secondary"
   | `color:${string}`;

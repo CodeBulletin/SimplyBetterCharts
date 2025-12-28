@@ -1,53 +1,81 @@
+import { ScaleRegistry } from "./ScaleRegistry";
+import type { Scale } from "./type";
+import type { ScaleId } from "../Types/types";
 import { LinearScale } from "./LinearScale";
 import { BandScale } from "./BandScale";
-import { ScaleRegistry } from "./ScaleRegistry";
 
-type cm = {
+type Margins = {
   top: number;
   left: number;
   right: number;
   bottom: number;
 };
 
+type ScaleKind = "linear" | "band";
+
 export class ScaleManager extends ScaleRegistry {
   width = 0;
   height = 0;
+  readonly margins: Margins;
 
-  private xLinear = new LinearScale();
-  private xBand = new BandScale<string | number>();
-  private yLinear = new LinearScale();
-  readonly margins: cm;
+  private scaleKinds = new Map<ScaleId, ScaleKind>();
 
-  constructor(margins: cm) {
+  constructor(margins: Margins) {
     super();
-
-    // 🔑 register STABLE instances
-    this.set("x", this.xLinear);
-    this.set("y", this.yLinear);
     this.margins = margins;
   }
 
   setSize(width: number, height: number) {
     this.width = width;
     this.height = height;
+  }
 
+  /** 🔑 Create scale lazily */
+  getOrCreate<D, I>(id: ScaleId, factory: () => Scale<D, I>): Scale<D, I> {
+    if (!this.has(id)) {
+      this.set(id, factory());
+    }
+    return this.get(id);
+  }
+
+  /** 🔑 Apply range AFTER scale exists */
+  applyRange(id: ScaleId) {
+    const scale = this.get(id);
     const { left, right, top, bottom } = this.margins;
 
-    // X scales → left → right
-    this.xLinear.setRange(left, width - right);
-    this.xBand.setRange(left, width - right);
+    if (id.startsWith("x")) {
+      scale.setRange(left, this.width - right);
+    }
 
-    // Y scale → bottom → top (SVG coordinate system)
-    this.yLinear.setRange(height - bottom, top);
+    if (id.startsWith("y")) {
+      scale.setRange(this.height - bottom, top);
+    }
   }
 
-  /** 🔁 switch X scale type WITHOUT replacing instance */
-  useBandX() {
-    this.xBand.setPadding(0.2, 0.2);
-    this.set("x", this.xBand);
+  /** 🔑 Factory helpers */
+  createLinear(id: ScaleId) {
+    const kind = this.scaleKinds.get(id);
+
+    if (kind && kind !== "linear") {
+      throw new Error(
+        `Scale "${id}" was already created as ${kind}, cannot use linear`,
+      );
+    }
+
+    this.scaleKinds.set(id, "linear");
+    return this.getOrCreate(id, () => new LinearScale());
   }
 
-  useLinearX() {
-    this.set("x", this.xLinear);
+  createBand(id: ScaleId) {
+    const kind = this.scaleKinds.get(id);
+
+    if (kind && kind !== "band") {
+      throw new Error(
+        `Scale "${id}" was already created as ${kind}, cannot use band`,
+      );
+    }
+
+    this.scaleKinds.set(id, "band");
+    return this.getOrCreate(id, () => new BandScale());
   }
 }

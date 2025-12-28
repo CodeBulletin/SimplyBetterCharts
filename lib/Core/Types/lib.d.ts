@@ -1,9 +1,6 @@
 import type { EasingName } from "../Animation/helper";
 
 export interface ChartOptions {
-  width: number;
-  height: number;
-
   margin?: Partial<{
     top: number;
     right: number;
@@ -30,16 +27,6 @@ export type AnimationOptions =
       duration?: number;
       easing?: EasingName;
     };
-
-export interface LineStyle {
-  stroke?: string;
-  strokeWidth?: number;
-}
-
-export interface BarStyle {
-  fill?: string;
-  radius?: number;
-}
 
 export type LineChartOptions = ChartOptions & {};
 export type BarChartOptions = ChartOptions & {};
